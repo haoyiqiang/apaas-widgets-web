@@ -32,6 +32,16 @@ import { fetchImageInfoByUrl, mergeCanvasImage } from './utils';
 import isEqual from 'lodash/isEqual';
 import { BoardMountManager } from './mount-manager';
 import { when } from 'mobx';
+
+import fullWorkerString from '@netless/appliance-plugin/dist/fullWorker.js?raw';
+import subWorkerString from '@netless/appliance-plugin/dist/subWorker.js?raw';
+
+import { ApplianceMultiPlugin } from '@netless/appliance-plugin';
+const fullWorkerBlob = new Blob([fullWorkerString], {type: 'text/javascript'});
+const fullWorkerUrl = URL.createObjectURL(fullWorkerBlob);
+const subWorkerBlob = new Blob([subWorkerString], {type: 'text/javascript'});
+const subWorkerUrl = URL.createObjectURL(subWorkerBlob);
+
 @Log.attach({ proxyMethods: false })
 export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
   logger!: Logger;
@@ -120,41 +130,61 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
         );
         return;
       }
-      BoardMountManager.setIsMounting(true);
-      await WindowManager.mount({
-        room: this._whiteRoom,
-        container: view,
-        cursor: true,
-        chessboard: false,
-        collectorContainer: options.collectorContainer,
-        containerSizeRatio: options.containerSizeRatio,
-      })
-        .then(async (wm) => {
+      try{
+        BoardMountManager.setIsMounting(true);
+
+        const wm =await WindowManager.mount({
+          room: this._whiteRoom,
+          container: view,
+          cursor: true,
+          chessboard: false,
+          supportAppliancePlugin: true,
+          collectorContainer: options.collectorContainer,
+          containerSizeRatio: options.containerSizeRatio,
+        });
+
+        if(wm){
           if (this._destroyed) {
             wm.destroy();
             return;
           }
+          // await wm.switchMainViewToWriter()
+          // await this._whiteRoom.setWritable(true)
+          const appliancePlugin = await ApplianceMultiPlugin.getInstance(wm, {
+            options: {
+              cdn: {
+                fullWorkerUrl,
+                subWorkerUrl,
+              },
+            },
+          });
+
+          if(process.env.NODE_ENV == "development"){
+            appliancePlugin.currentManager?.consoleWorkerInfo()
+          }
+          //await this._whiteRoom.setWritable(false)
+         
           //@ts-ignore
           window._wm = wm;
           this._windowManager = wm;
           this._windowManager.mainView.disableCameraTransform = true;
           this._addWindowManagerEventListeners();
           this._eventBus.emit(FcrBoardMainWindowEvent.MountSuccess, wm);
-        })
-        .catch((e) => {
-          this._eventBus.emit(
-            FcrBoardMainWindowEvent.Failure,
-            FcrBoardMainWindowFailureReason.MountFailure,
-            e,
-          );
-        })
-        .finally(() => {
-          this.logger.info(
-            '[FcrBoardMainWindow] finish mount board window, white room id:',
-            this._whiteRoom.uuid,
-          );
-          BoardMountManager.setIsMounting(false);
-        });
+        }
+      }catch(e){
+        this._eventBus.emit(
+          FcrBoardMainWindowEvent.Failure,
+          FcrBoardMainWindowFailureReason.MountFailure,
+          e,
+        );
+      }finally{
+        this.logger.info(
+          '[FcrBoardMainWindow] finish mount board window, white room id:',
+          this._whiteRoom.uuid,
+        );
+        BoardMountManager.setIsMounting(false);
+      }
+
     }
   }
 
@@ -267,6 +297,7 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
       };
 
       windowManager.switchMainViewToWriter();
+
       room.insertImage(imageInfo);
       room.completeImageUpload(uuid, resourceUrl);
     }
@@ -591,18 +622,19 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
   }
 
   private async _setBoardWritable(granted: boolean) {
-    const room = this._whiteRoom;
-    if (granted && !room.isWritable) {
-      await room.setWritable(true);
-      room.disableDeviceInputs = false;
-      room.disableSerialization = false;
-    }
+    // const room = this._whiteRoom;
 
-    if (!granted && room.isWritable) {
-      room.disableDeviceInputs = true;
-      room.disableSerialization = true;
-      await room.setWritable(false);
-    }
+    // if (granted && !room.isWritable) {
+    //   await room.setWritable(true);
+    //   room.disableDeviceInputs = false;
+    //   room.disableSerialization = false;
+    // }
+
+    // if (!granted && room.isWritable) {
+    //   room.disableDeviceInputs = true;
+    //   room.disableSerialization = true;
+    //   await room.setWritable(false);
+    // }
   }
 
   on(
