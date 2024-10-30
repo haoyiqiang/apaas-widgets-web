@@ -27,6 +27,7 @@ import {
   FcrBoardH5WindowConfig,
   FcrBoardMaterialWindowConfig,
   FcrBoardMediaWindowConfig,
+  SlideError,
 } from './type';
 import { fetchImageInfoByUrl, mergeCanvasImage } from './utils';
 import isEqual from 'lodash/isEqual';
@@ -86,6 +87,9 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
         autoFPS,
         maxResolutionLevel,
         forceCanvas,
+        onRenderError: (error: SlideError, pageIndex: number) => {
+          this._eventBus.emit(FcrBoardMainWindowEvent.SlideError, error, pageIndex);
+        }
       },
     });
 
@@ -132,8 +136,7 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
       }
       try{
         BoardMountManager.setIsMounting(true);
-
-        const wm =await WindowManager.mount({
+        const wm = await WindowManager.mount({
           room: this._whiteRoom,
           container: view,
           cursor: true,
@@ -148,24 +151,26 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
             wm.destroy();
             return;
           }
-          // await wm.switchMainViewToWriter()
-          // await this._whiteRoom.setWritable(true)
-          const appliancePlugin = await ApplianceMultiPlugin.getInstance(wm, {
+          const params = {
             options: {
               cdn: {
                 fullWorkerUrl,
                 subWorkerUrl,
               },
             },
-          });
+          }
+          this.logger.info("[board window] appliance plugin init: ", params)
+          const appliancePlugin = await ApplianceMultiPlugin.getInstance(wm, params);
 
           if(process.env.NODE_ENV == "development"){
-            appliancePlugin.currentManager?.consoleWorkerInfo()
+            setTimeout(()=>{appliancePlugin.currentManager?.consoleWorkerInfo()},20000)
           }
-          //await this._whiteRoom.setWritable(false)
          
+
           //@ts-ignore
           window._wm = wm;
+          //@ts-ignore
+          window._appliancePlugin = appliancePlugin;
           this._windowManager = wm;
           this._windowManager.mainView.disableCameraTransform = true;
           this._addWindowManagerEventListeners();
@@ -257,6 +262,16 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
 
   @bound
   @Log.trace
+  refresh() {
+    this.preCheck({ wm: false });
+    const windowManager = this._windowManager;
+    if (windowManager) {
+      windowManager?.refresh()
+    }
+  }
+
+  @bound
+  @Log.trace
   async putImageResource(
     resourceUrl: string,
     options?: { x: number; y: number; width: number; height: number },
@@ -321,6 +336,17 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
     const windowManager = this._windowManager;
     const scenePath = `/${config.resourceUuid}`;
     if (config.resourceHasAnimation) {
+      // windowManager?.addApp({
+      //   kind: 'Slide',
+      //   options: {
+      //     scenePath: `/ppt${scenePath}`,
+      //     title: config.title,
+      //   },
+      //   attributes: {
+      //     taskId: config.taskUuid,
+      //     url: config.urlPrefix,
+      //   }
+      // })
       windowManager?.addApp({
         kind: 'Slide',
         options: {
@@ -328,10 +354,10 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
           title: config.title,
         },
         attributes: {
-          taskId: config.taskUuid,
-          url: config.urlPrefix,
-        },
-      });
+          taskId: "06415a307f2011ec8bdc15d18ec9acc7",
+          url: "https://convertcdn.netless.group/dynamicConvert",
+        }
+      })
     } else {
       windowManager?.addApp({
         kind: BuiltinApps.DocsViewer,
@@ -636,7 +662,10 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
       await room.setWritable(false);
     }
   }
-
+  on(
+    eventName: FcrBoardMainWindowEvent.SlideError,
+    cb: (error: SlideError, pageIndex: number) => void,
+  ): void;
   on(
     eventName: FcrBoardMainWindowEvent.OpenedCoursewareListChanged,
     cb: (coursewareList: string[]) => void,
