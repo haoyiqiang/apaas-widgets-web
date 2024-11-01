@@ -42,7 +42,7 @@
     "@netless/slide": "^0.9.2",
     "@netless/app-slide": "0.2.27",
     "@netless/app-talkative": "0.1.0",
-    "@netless/appliance-plugin": "1.1.0-hotfix.1",
+    "@netless/appliance-plugin": "1.1.1",
     "@netless/combine-player": "1.1.4",
     "@netless/cursor-tool": "0.0.7",
     "@netless/react-seek-slider": "1.0.4",

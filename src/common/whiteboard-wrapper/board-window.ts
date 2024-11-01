@@ -38,6 +38,7 @@ import fullWorkerString from '@netless/appliance-plugin/dist/fullWorker.js?raw';
 import subWorkerString from '@netless/appliance-plugin/dist/subWorker.js?raw';
 
 import { ApplianceMultiPlugin } from '@netless/appliance-plugin';
+import { DevicePlatform, getPlatform } from 'agora-edu-core';
 const fullWorkerBlob = new Blob([fullWorkerString], {type: 'text/javascript'});
 const fullWorkerUrl = URL.createObjectURL(fullWorkerBlob);
 const subWorkerBlob = new Blob([subWorkerString], {type: 'text/javascript'});
@@ -151,12 +152,18 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
             wm.destroy();
             return;
           }
+          const platform = getPlatform()
+        
+          const canvasOpt = platform == (DevicePlatform.MACOS || DevicePlatform.WINDOWS) ? {
+            contextType: '2d'
+          } : undefined
           const params = {
             options: {
               cdn: {
                 fullWorkerUrl,
                 subWorkerUrl,
               },
+              canvasOpt
             },
           }
           this.logger.info("[board window] appliance plugin init: ", params)
