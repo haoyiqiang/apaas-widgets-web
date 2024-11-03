@@ -9,9 +9,11 @@ const sendMsg = (id, type, options) => {
       msg.set({
           ...options,
           success: function(id, serverId) {
+              console.log(">>>>>>>>>>>>succ")
               resolve(msg)
           },
           fail: function(err){
+            console.log(">>>>>>>>>>>>fail")
               reject(err)
           }
       });
@@ -39,18 +41,41 @@ export class MessageAPI {
   constructor(store) {
     this.store = store;
   }
-  // 禁言消息
-  sendCmdMsg = (action, userId) => {
+
+  removeMsg = async (recallId) => {
     const state = this.store.getState();
-    const roomId = state?.propsData.chatRoomId;
     const roomUuid = state?.propsData.roomUuid;
     const roleType = state?.propsData.roleType;
     const loginName = state?.propsData.userName;
     const loginUser = state?.propsData.userUuid;
-    var id = WebIM.conn.getUniqueId(); //生成本地消息id
-    var msg = new WebIM.message('cmd', id); //创建命令消息
-    msg.set({
-      to: roomId, //接收消息对象
+    const sendRoomIds = state?.sendRoomIds;
+    const publicRoomId = state?.propsData?.chatRoomId;
+    let options = {
+      action: 'DEL', //用户自定义，cmd消息必填
+      chatType: 'chatRoom',
+      from: loginUser,
+      ext: {
+        msgtype: MSG_TYPE.common, // 消息类型
+        roomUuid: roomUuid,
+        msgId: recallId,
+        role: roleType,
+        nickName: loginName,
+      }, //用户自扩展的消息内容（群聊用法相同）
+    }
+    const [msg] = await batchSendMsg('cmd', [publicRoomId, ...sendRoomIds], options)
+    this.store.dispatch(messageAction(msg.body, { isHistory: false }));
+  }
+
+  // 禁言消息
+  sendCmdMsg = async (action, userId) => {
+    const state = this.store.getState();
+    const publicRoomId = state?.propsData?.chatRoomId;
+    const sendRoomIds = state?.sendRoomIds;
+    const roomUuid = state?.propsData.roomUuid;
+    const roleType = state?.propsData.roleType;
+    const loginName = state?.propsData.userName;
+    const loginUser = state?.propsData.userUuid;
+    let options = {
       action: action, //用户自定义，cmd消息必填
       chatType: 'chatRoom',
       from: loginUser,
@@ -71,8 +96,9 @@ export class MessageAPI {
       fail: (e) => {
         console.log('Fail'); //如禁言、拉黑后发送消息会失败
       },
-    });
-    WebIM.conn.send(msg.body);
+    }
+    const [msg] = await batchSendMsg('cmd', [publicRoomId,...sendRoomIds], options)
+    this.store.dispatch(messageAction(msg.body, { isHistory: false }));
   };
 
   sendTxtMsg = async (content) => {
