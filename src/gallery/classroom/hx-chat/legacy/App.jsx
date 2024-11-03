@@ -73,7 +73,10 @@ const App = function (props) {
 
   useEffect(() => {
     const propsData = { ...props.pluginStore.context };
+
+    console.log(">>>>>>>>>>>>>>>>>>>propsData", propsData)
     const { orgName, appName, chatRoomId, userUuid } = propsData;
+
 
     if (orgName && appName && chatRoomId && userUuid && !loggedIn.current && apis) {
       loggedIn.current = true;

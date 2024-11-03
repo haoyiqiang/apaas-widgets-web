@@ -15,7 +15,6 @@ export const MessageBox = () => {
   })
 
   let isHaveMsg = msgs && msgs.length > 0;
-
   return (
     <>
       {isHaveMsg ? (

@@ -233,17 +233,22 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
   }
 
   onCreate(properties: any, userProperties: any) {
+    console.log(">>>>>>>>>>>>>>>>onCreate", properties, userProperties)
     this._easemobUserId = userProperties?.userId;
     this._imConfig = properties?.extra;
     this._renderApp();
   }
 
   onPropertiesUpdate(properties: any) {
+    console.log(">>>>>>>>>>>>>>>>onPropertiesUpdate", properties)
+
     this._imConfig = properties.extra;
     this._renderApp();
   }
 
   onUserPropertiesUpdate(userProperties: any) {
+    console.log(">>>>>>>>>>>>>>>>onUserPropertiesUpdate", userProperties)
+
     this._easemobUserId = userProperties.userId;
     this._renderApp();
   }

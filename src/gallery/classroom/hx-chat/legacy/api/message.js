@@ -3,6 +3,36 @@ import { MSG_TYPE } from '../contants';
 import { messageAction } from '../redux/actions/messageAction';
 import { message } from 'antd';
 import { transI18n } from 'agora-common-libs';
+const sendMsg = (id, type, options) => {
+  return new Promise((resolve, reject) => {
+      let msg = new WebIM.message(type, id); // 创建文本消息
+      msg.set({
+          ...options,
+          success: function(id, serverId) {
+              resolve(msg)
+          },
+          fail: function(err){
+              reject(err)
+          }
+      });
+      WebIM.conn.send(msg.body);
+  })
+}
+
+const batchSendMsg = (type, roomIds, options) => {
+  let sendTasks = []
+  let localMsgId = WebIM.conn.getUniqueId(); // 生成本地消息id
+
+  for (let roomId of roomIds) {
+      const task = sendMsg(localMsgId, type, {
+          to: roomId,
+          ...options
+      })
+      sendTasks.push(task)
+  }
+
+  return Promise.all(sendTasks)
+}
 
 export class MessageAPI {
   store = null;
@@ -45,6 +75,34 @@ export class MessageAPI {
     WebIM.conn.send(msg.body);
   };
 
+  sendTxtMsg = async (content) => {
+    const state = this.store.getState();
+    const userUuid = state?.propsData.userUuid;
+    const publicRoomId = state?.propsData?.chatRoomId;
+    const roleType = state?.propsData.roleType;
+    const roomUuid = state?.propsData.roomUuid;
+    const userNickName = state?.propsData.userName;
+    const userAvatarUrl = state?.loginUserInfo.avatarurl;
+    const sendRoomIds = state?.sendRoomIds;
+    const isQuestion = state?.isQuestion
+    let options = {
+      msg: content,
+      from: userUuid,
+      chatType: 'chatRoom', // 群聊类型设置为聊天室
+      ext: {
+          msgtype: MSG_TYPE.common, // 消息类型
+          roomUuid: roomUuid,
+          role: roleType,
+          avatarUrl: userAvatarUrl || '',
+          nickName: userNickName,
+          isQuestion: isQuestion,
+      }, // 扩展消息
+    }
+
+    const [msg] = await batchSendMsg('txt', [publicRoomId,...sendRoomIds], options)
+    this.store.dispatch(messageAction(msg.body, { isHistory: false }));
+  }
+
   //图片消息
   sendImgMsg = (couterRef, fileData) => {
     // e.preventDefault();
@@ -55,9 +113,11 @@ export class MessageAPI {
     const roomUuid = state?.propsData.roomUuid;
     const userNickName = state?.propsData.userName;
     const userAvatarUrl = state?.loginUserInfo.avatarurl;
+    const sendRoomIds = state?.sendRoomIds;
 
     var id = WebIM.conn.getUniqueId(); // 生成本地消息id
-    var msg = new WebIM.message('img', id); // 创建图片消息
+    // var msg = new WebIM.message('img', id); // 创建图片消息
+    
     let file = fileData ? fileData : WebIM.utils.getFileUrl(couterRef.current); // 将图片转化为二进制文件
     var allowType = {
       jpeg: true,
@@ -68,7 +128,7 @@ export class MessageAPI {
     let img = new Image();
     img.src = file.url;
     //加载后才能拿到宽和高
-    img.onload = () => {
+    img.onload = async () => {
       if (file.filetype.toLowerCase() in allowType) {
         var option = {
           file: file,
@@ -93,22 +153,15 @@ export class MessageAPI {
             // 消息上传成功
             console.log('onFileUploadComplete>>>', res);
           },
-          success: (id, serverId) => {
-            // 消息发送成功回调
-            msg.id = serverId;
-            msg.body.id = serverId;
-            msg.body.time = new Date().getTime().toString();
-            this.store.dispatch(messageAction(msg.body, { isHistory: false }));
-            couterRef.current.value = null;
-          },
-          fail: (e) => {
-            //如禁言、拉黑后发送消息会失败
-            couterRef.current.value = null;
-          },
           flashUpload: WebIM.flashUpload,
         };
-        msg.set(option);
-        WebIM.conn.send(msg.body);
+
+        try{
+          const [msg] = await batchSendMsg('img', [publicRoomId, ...sendRoomIds], option)
+          this.store.dispatch(messageAction(msg.body, { isHistory: false }));
+        } catch(err) {
+          couterRef.current.value = null;
+        }
       }
     };
   };

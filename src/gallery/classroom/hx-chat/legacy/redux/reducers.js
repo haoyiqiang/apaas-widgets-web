@@ -6,6 +6,9 @@ import omit from 'lodash/omit';
 import uniqBy from 'lodash/uniqBy';
 
 import { CHAT_TABS_KEYS, MUTE_CONFIG, LOCAL_RETAIN_HISTORY_COUNT } from '../contants';
+import { recvRoomIds, sendRoomIds } from './actions/roomAction';
+
+
 let defaultState = {
   propsData: {}, // props 值
   showChat: false, // 控制Chat
@@ -23,6 +26,8 @@ let defaultState = {
     isUserMute: false, // 单人是否禁言
     memberCount:0,//成员数量
   },
+  sendRoomIds: [],
+  recvRoomIds: [],
   messages: [], // 消息列表
   isTabKey: CHAT_TABS_KEYS.chat, // 当前选中的Tab
   showRed: false, // 不在聊天Tab消息提示
@@ -47,6 +52,16 @@ let defaultState = {
 const reducer = (state = defaultState, action) => {
   const { type, data } = action;
   switch (type) {
+    case 'SEND_ROOM_IDS':
+      return {
+        ...state,
+        sendRoomIds: data || []
+      }
+    case 'RECV_ROOM_IDS':
+      return {
+        ...state,
+        recvRoomIds: data || []
+      }
     case 'SAVE_PROPS_ACTION':
       return {
         ...state,

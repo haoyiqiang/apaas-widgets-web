@@ -1,12 +1,14 @@
 import { message } from 'antd';
-import { transI18n } from 'agora-common-libs';
+import { Logger, transI18n } from 'agora-common-libs';
 import { ROLE } from '../contants';
 import {
   announcementStatus,
+  recvRoomIds,
   roomAllMute,
   roomAnnouncement,
   roomInfo,
   roomUsers,
+  sendRoomIds,
 } from '../redux/actions/roomAction';
 import { WebIM } from '../utils/WebIM';
 export class ChatRoomAPI {
@@ -24,16 +26,15 @@ export class ChatRoomAPI {
   }
 
   // 加入聊天室
-  joinRoom = async ({ chatRoomId: roomId, userUuid, roleType }) => {
-    let options = {
+  joinRoom = async ({ chatRoomId: roomId, chatGroup: { sendChatRoomIds=[], recvChatRoomIds=[] }, userUuid, roleType }) => {
+    WebIM.conn.mr_cache = [];
+    // 发送组
+    WebIM.conn.joinChatRoom({
       roomId: roomId, // 聊天室id
       message: 'reason', // 原因（可选参数）
-    };
-    WebIM.conn.mr_cache = [];
-
-    WebIM.conn.joinChatRoom(options).then((res) => {
+    }).then((res) => {
       // message.success(transI18n('chat.join_room_success'));
-      this.getRoomInfo(options.roomId, roleType);
+      this.getRoomInfo(roomId, roleType);
       // 学生登陆 加入聊天室成功后，检查自己是否被禁言
       if (roleType === ROLE.student.id) {
         this.muteAPI.getCurrentUserStatus();
@@ -43,6 +44,22 @@ export class ChatRoomAPI {
       }
       this.chatHistoryAPI.getHistoryMessages(roomId);
     });
+
+    sendChatRoomIds.forEach(sendRoomId => {
+      WebIM.conn.joinChatRoom({
+        roomId: sendRoomId,
+        message: 'reason'
+      })
+    })
+
+    recvChatRoomIds.forEach(recvRoomId => {
+      WebIM.conn.joinChatRoom({
+        roomId: recvRoomId,
+        message: 'reason'
+      })
+    })
+    this.store.dispatch(sendRoomIds(sendChatRoomIds))
+    this.store.dispatch(recvRoomIds(recvChatRoomIds))
   };
 
   // 获取聊天室详情
@@ -130,6 +147,9 @@ export class ChatRoomAPI {
         console.log('updateAnnouncement>>>', err);
       });
   };
+
+
+
 
   // 退出聊天室
   logoutChatroom = () => {

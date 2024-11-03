@@ -14,7 +14,6 @@ import isElctronPlatform from '../../utils/platform';
 import { Button } from '../Button';
 import './index.css';
 import ScreenshotMenu from './Screenshot';
-import { WebIM } from '../../utils/WebIM';
 import { useShallowEqualSelector } from '../../utils';
 
 // 展示表情
@@ -37,6 +36,8 @@ export const ShowEomji = ({ getEmoji }) => {
   );
 };
 
+
+
 export const InputMsg = ({ allMutePermission }) => {
   const {
     apis,
@@ -44,6 +45,8 @@ export const InputMsg = ({ allMutePermission }) => {
     roomId,
     roleType,
     roomUuid,
+    sendRoomIds,
+    recvRoomIds,
     userNickName,
     userAvatarUrl,
     isAllMute,
@@ -54,6 +57,8 @@ export const InputMsg = ({ allMutePermission }) => {
       apis: state?.apis,
       loginUser: state?.propsData.userUuid,
       roomId: state?.room.info.id,
+      sendRoomIds: state?.sendRoomIds, 
+      recvRoomIds: state?.recvRoomIds, 
       roleType: state?.propsData.roleType,
       roomUuid: state?.propsData.roomUuid,
       userNickName: state?.propsData.userName,
@@ -118,8 +123,9 @@ export const InputMsg = ({ allMutePermission }) => {
     couterRef.current.click();
   };
 
+
   // 发送消息
-  const sendTextMessage = () => (e) => {
+  const sendTextMessage = () => async (e) => {
     e.preventDefault();
 
     if(content.length > 300) {
@@ -131,38 +137,19 @@ export const InputMsg = ({ allMutePermission }) => {
       message.error(transI18n('chat.enter_content_is_empty'));
       return;
     }
-    let id = WebIM.conn.getUniqueId(); // 生成本地消息id
-    let msg = new WebIM.message('txt', id); // 创建文本消息
-    let option = {
-      msg: content, // 消息内容
-      to: roomId, // 接收消息对象(聊天室id)
-      from: loginUser,
-      chatType: 'chatRoom', // 群聊类型设置为聊天室
-      ext: {
-        msgtype: MSG_TYPE.common, // 消息类型
-        roomUuid: roomUuid,
-        role: roleType,
-        avatarUrl: userAvatarUrl || '',
-        nickName: userNickName,
-        isQuestion: isQuestion,
-      }, // 扩展消息
-      success: function (id, serverId) {
-        handleCancel();
-        msg.id = serverId;
-        msg.body.id = serverId;
-        msg.body.time = new Date().getTime().toString();
-        store.dispatch(messageAction(msg.body, { isHistory: false }));
-      }, // 对成功的相关定义，sdk会将消息id登记到日志进行备份处理
-      fail: function (err) {
-        console.log('fail>>>', err);
-        if (err.type === 501) {
-          message.error(transI18n('chat.message_incloud_illegal_content'));
-        }
-      },
-    };
-    msg.set(option);
+
+    try{
+      await apis.messageAPI.sendTxtMsg(content)
+      handleCancel();
+    }catch(err){
+      console.log('fail>>>', err);
+      if (err.type === 501) {
+        message.error(transI18n('chat.message_incloud_illegal_content'));
+      }
+    }
+    
     setContent('');
-    WebIM.conn.send(msg.body);
+
     setInputStatus(false);
     store.dispatch(setQuestioinStateAction(false));
     inputRef.current.blur();
