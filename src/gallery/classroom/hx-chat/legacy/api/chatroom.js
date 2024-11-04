@@ -11,6 +11,22 @@ import {
   sendRoomIds,
 } from '../redux/actions/roomAction';
 import { WebIM } from '../utils/WebIM';
+import http from './base';
+const joinRoom = (roomId) => {
+  return WebIM.conn.joinChatRoom({
+    roomId: roomId,
+    message: 'reason'
+  })
+}
+
+const batchJoinRoom = (roomIds) => {
+  const tasks = []
+  for(let roomId of roomIds) {
+    const task = joinRoom(roomId)
+    tasks.push(task)
+  }
+  return Promise.all(tasks)
+}
 export class ChatRoomAPI {
   store = null;
   chatHistoryAPI = null;
@@ -26,38 +42,22 @@ export class ChatRoomAPI {
   }
 
   // 加入聊天室
-  joinRoom = async ({ chatRoomId: roomId, chatGroup: { sendChatRoomIds=[], recvChatRoomIds=[] }, userUuid, roleType }) => {
+  joinRoom = async (params) => {
+    const { chatRoomId: roomId, chatGroup: { sendChatRoomIds=[], recvChatRoomIds=[] } = {}, userUuid, roleType } = params
     WebIM.conn.mr_cache = [];
-    // 发送组
-    WebIM.conn.joinChatRoom({
-      roomId: roomId, // 聊天室id
-      message: 'reason', // 原因（可选参数）
-    }).then((res) => {
-      // message.success(transI18n('chat.join_room_success'));
-      this.getRoomInfo(roomId, roleType);
-      // 学生登陆 加入聊天室成功后，检查自己是否被禁言
-      if (roleType === ROLE.student.id) {
-        this.muteAPI.getCurrentUserStatus();
-      }
-      if (roleType === ROLE.teacher.id || roleType === ROLE.assistant.id) {
-        this.getRoomsAdmin(roomId);
-      }
-      this.chatHistoryAPI.getHistoryMessages(roomId);
-    });
 
-    sendChatRoomIds.forEach(sendRoomId => {
-      WebIM.conn.joinChatRoom({
-        roomId: sendRoomId,
-        message: 'reason'
-      })
-    })
+    await batchJoinRoom([roomId, ...sendChatRoomIds, ...recvChatRoomIds])
+    // message.success(transI18n('chat.join_room_success'));
+    this.getRoomInfo(roomId, roleType);
+    // 学生登陆 加入聊天室成功后，检查自己是否被禁言
+    if (roleType === ROLE.student.id) {
+      this.muteAPI.getCurrentUserStatus();
+    }
+    if (roleType === ROLE.teacher.id || roleType === ROLE.assistant.id) {
+      this.getRoomsAdmin(roomId);
+    }
+    this.chatHistoryAPI.getHistoryMessages(roomId);
 
-    recvChatRoomIds.forEach(recvRoomId => {
-      WebIM.conn.joinChatRoom({
-        roomId: recvRoomId,
-        message: 'reason'
-      })
-    })
     this.store.dispatch(sendRoomIds(sendChatRoomIds))
     this.store.dispatch(recvRoomIds(recvChatRoomIds))
   };
@@ -147,6 +147,20 @@ export class ChatRoomAPI {
         console.log('updateAnnouncement>>>', err);
       });
   };
+
+
+  getRoomUserList = async (params) => {
+    const { host, appId, roomUuid } = this.store.getState().agoraTokenConfig;
+    const url = `${host}/edu/apps/${appId}/v2/rooms/${roomUuid}/users/page`;
+    try {
+      const resp = await http.get(url, {
+        params
+      });
+      
+    } catch (err) {
+      console.log('err>>>', err);
+    }
+  }
 
 
 

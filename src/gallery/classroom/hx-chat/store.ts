@@ -233,22 +233,25 @@ export class WidgetChatUIStore {
    * 获取学生列表
    */
   private async fetchNextListByParam(override?: Partial<FetchUserParam>) {
-    const params = {
-      ...this.fetchUsersListParams,
-      ...override,
-    };
+    // const params = {
+    //   ...this.fetchUsersListParams,
+    //   ...override,
+    // };
 
-    const data: { nextId: string | number | undefined; list: any[] } =
-      await this._widget.classroomStore.userStore.fetchUserList({
-        ...params,
-        userName: this.searchKeyword,
-      });
+    // const data: { nextId: string | number | undefined; list: any[] } =
+    //   await this._widget.classroomStore.userStore.fetchUserList({
+    //     ...params,
+    //     userName: this.searchKeyword,
+    //   });
 
-    const list = await this.getUserInfoList(
-      data.list.map((item) => item.userProperties.widgets.easemobIM.userId),
-    );
+    // const list = await this.getUserInfoList(
+    //   data.list.map((item) => item.userProperties.widgets.easemobIM.userId),
+    // );
 
-    return { nextId: data.nextId, list };
+    // return { nextId: data.nextId, list };
+    console.log(">>>>>>>>>>>>>>>>>>>>>this", this)
+    
+    return { nextId: null, list: [] }
   }
 
   /**

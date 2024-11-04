@@ -11,6 +11,8 @@ export class ChatHistoryAPI {
   }
 
   getHistoryMessages = (roomId) => {
+    const state = this.store.getState();
+
     var options = {
       queue: roomId,
       isGroup: true,
@@ -39,6 +41,7 @@ export class ChatHistoryAPI {
         console.log('漫游失败', err);
       },
     };
+    console.log(">>>>>>>>>>>", WebIM.conn.fetchHistoryMessages)
     WebIM.conn.fetchHistoryMessages(options);
   };
 }

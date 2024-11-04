@@ -176,6 +176,9 @@ const reducer = (state = defaultState, action) => {
       };
     case 'SAVE_ROOM_MESSAGE':
       const { isHistory } = action.options;
+      const mainRoomId = state.room.info.id
+      const recvRoomIds = state.recvRoomIds
+      const roomIds = [mainRoomId, ...recvRoomIds]
 
       let dataArray = data;
 
@@ -187,7 +190,8 @@ const reducer = (state = defaultState, action) => {
       let newMsgs;
       msgs = state.messages.concat(dataArray);
 
-      const msgIds = dataArray.filter((msg) => !!msg.ext.msgId).map((msg) => msg.ext.msgId);
+      // 只显示接受组的消息
+      const msgIds = dataArray.filter((msg) => !!msg.ext.msgId && roomIds.indexOf(msg.to) === -1).map((msg) => msg.ext.msgId);
 
       msgs = msgs.filter((item) => !msgIds.includes(item.id));
 
