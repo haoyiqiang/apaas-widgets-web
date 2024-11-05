@@ -80,7 +80,8 @@ export const createListener = (store) => {
       onTextMessage: (message) => {
         console.log('onTextMessage>>>', message);
         const startTs = Date.now();
-        if (new_IM_Data.chatRoomId === message.to) {
+        console.log(">>>>>>>>>>>>>>>>>>new_IM_Data", new_IM_Data.recvRoomIds)
+        if (new_IM_Data.recvRoomIds.indexOf(message.to) !== -1) {
           const newMessage = apis.messageAPI.convertCustomMessage(message);
           messageArr.push(newMessage);
           dispatchMessageAction();

@@ -2,14 +2,14 @@ import { action, observable, runInAction, computed } from 'mobx';
 import { AgoraHXChatWidget } from '.';
 import { OrientationEnum } from './type';
 import { Lodash, bound } from 'agora-common-libs';
-import type { FetchUserParam } from 'agora-edu-core';
+import { EduClassroomConfig, FetchUserParam } from 'agora-edu-core';
 import { WebIM } from './legacy/utils/WebIM';
 import { AgoraChat } from 'agora-chat';
-
+import http from './legacy/api/base';
 export class WidgetChatUIStore {
   private _matchMedia = window.matchMedia('(orientation: portrait)');
   private _isFetchingList = false;
-
+  private _widget: AgoraHXChatWidget
   @observable
   orientation: OrientationEnum = OrientationEnum.portrait;
 
@@ -25,8 +25,9 @@ export class WidgetChatUIStore {
   @observable
   searchKeyword = '';
 
-  constructor(private _widget: AgoraHXChatWidget) {
-    const { sessionInfo, platform } = _widget.classroomConfig;
+  constructor(private widget: AgoraHXChatWidget) {
+    this._widget = widget
+    const { sessionInfo, platform } = widget.classroomConfig;
     const isH5 = platform === 'H5';
     this.handleOrientationchange();
 
@@ -233,10 +234,10 @@ export class WidgetChatUIStore {
    * 获取学生列表
    */
   private async fetchNextListByParam(override?: Partial<FetchUserParam>) {
-    // const params = {
-    //   ...this.fetchUsersListParams,
-    //   ...override,
-    // };
+    const params = {
+      ...this.fetchUsersListParams,
+      ...override,
+    };
 
     // const data: { nextId: string | number | undefined; list: any[] } =
     //   await this._widget.classroomStore.userStore.fetchUserList({
@@ -244,14 +245,26 @@ export class WidgetChatUIStore {
     //     userName: this.searchKeyword,
     //   });
 
-    // const list = await this.getUserInfoList(
-    //   data.list.map((item) => item.userProperties.widgets.easemobIM.userId),
-    // );
-
-    // return { nextId: data.nextId, list };
-    console.log(">>>>>>>>>>>>>>>>>>>>>this", this)
+    const { host, appId, sessionInfo: { role, roomUuid  } } = EduClassroomConfig.shared;
     
-    return { nextId: null, list: [] }
+    const url = `${host}/edu/apps/${appId}/v2/rooms/${roomUuid}/users/page`
+    
+    const resp = await http.get(url, {
+      params: {
+        role: params.role,
+        type: params.type,
+        pageNo: params.nextId,
+        pageSize: params.count,
+        chatGroupUuids: this._widget.chatGroupUuids.toString()
+      }
+    })
+
+    const data:{total:number, pageNo:number, pageSize:number, list:any[]} = resp.data.data
+
+    const list = await this.getUserInfoList(
+      data.list.map((item) => item.userProperties.widgets.easemobIM.userId),
+    );
+    return { nextId: data.pageNo + 1, list };
   }
 
   /**

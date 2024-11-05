@@ -3,14 +3,6 @@ export const roomInfo = (data) => {
   return { type: 'ROOM_INFO', data };
 };
 
-export const recvRoomIds = (data) => {
-  return { type: 'RECV_ROOM_IDS', data }
-}
-
-export const sendRoomIds = (data) => {
-  return { type: 'SEND_ROOM_IDS', data }
-}
-
 // 聊天室成员
 export const roomUsers = (data, option) => {
   return { type: 'ROOM_USERS', data, option };

@@ -3,8 +3,10 @@ import { MSG_TYPE } from '../contants';
 import { messageAction } from '../redux/actions/messageAction';
 import { message } from 'antd';
 import { transI18n } from 'agora-common-libs';
-const sendMsg = (id, type, options) => {
+import { uniq } from 'lodash';
+const sendMsg = (type, options) => {
   return new Promise((resolve, reject) => {
+      let id = WebIM.conn.getUniqueId(); // 生成本地消息id
       let msg = new WebIM.message(type, id); // 创建文本消息
       msg.set({
           ...options,
@@ -21,14 +23,15 @@ const sendMsg = (id, type, options) => {
 
 const batchSendMsg = (type, roomIds, options) => {
   let sendTasks = []
-  let localMsgId = WebIM.conn.getUniqueId(); // 生成本地消息id
 
-  for (let roomId of roomIds) {
-      const task = sendMsg(localMsgId, type, {
-          to: roomId,
-          ...options
+  for (let roomId of uniq(roomIds)) {
+    if(roomId){
+      const task = sendMsg(type, {
+        to: roomId,
+        ...options
       })
       sendTasks.push(task)
+    }
   }
 
   return Promise.all(sendTasks)
@@ -46,8 +49,8 @@ export class MessageAPI {
     const roleType = state?.propsData.roleType;
     const loginName = state?.propsData.userName;
     const loginUser = state?.propsData.userUuid;
-    const sendRoomIds = state?.sendRoomIds;
-    const publicRoomId = state?.propsData?.chatRoomId;
+    const sendRoomIds = state?.propsData.sendRoomIds;
+    const mainRoomId = state?.propsData?.chatRoomId;
     let options = {
       action: 'DEL', //用户自定义，cmd消息必填
       chatType: 'chatRoom',
@@ -60,15 +63,15 @@ export class MessageAPI {
         nickName: loginName,
       }, //用户自扩展的消息内容（群聊用法相同）
     }
-    const [msg] = await batchSendMsg('cmd', [publicRoomId, ...sendRoomIds], options)
-    this.store.dispatch(messageAction(msg.body, { isHistory: false }));
+    const [msg] = await batchSendMsg('cmd', sendRoomIds, options)
+    this.store.dispatch(messageAction(msg.body, { isSend:true, isHistory: false }));
   }
 
   // 禁言消息
   sendCmdMsg = async (action, userId) => {
     const state = this.store.getState();
-    const publicRoomId = state?.propsData?.chatRoomId;
-    const sendRoomIds = state?.sendRoomIds;
+    const mainRoomId = state?.propsData.chatRoomId;
+    const sendRoomIds = state?.propsData.sendRoomIds;
     const roomUuid = state?.propsData.roomUuid;
     const roleType = state?.propsData.roleType;
     const loginName = state?.propsData.userName;
@@ -95,19 +98,21 @@ export class MessageAPI {
         console.log('Fail'); //如禁言、拉黑后发送消息会失败
       },
     }
-    const [msg] = await batchSendMsg('cmd', [publicRoomId,...sendRoomIds], options)
-    this.store.dispatch(messageAction(msg.body, { isHistory: false }));
+    const [msg] = await batchSendMsg('cmd', sendRoomIds, options)
+    this.store.dispatch(messageAction(msg.body, { isSend:true, isHistory: false }));
   };
 
   sendTxtMsg = async (content) => {
     const state = this.store.getState();
     const userUuid = state?.propsData.userUuid;
-    const publicRoomId = state?.propsData?.chatRoomId;
+    const mainRoomId = state?.propsData?.chatRoomId;
     const roleType = state?.propsData.roleType;
     const roomUuid = state?.propsData.roomUuid;
     const userNickName = state?.propsData.userName;
     const userAvatarUrl = state?.loginUserInfo.avatarurl;
-    const sendRoomIds = state?.sendRoomIds;
+    const sendRoomIds = state?.propsData.sendRoomIds;
+    const recvRoomIds = state?.propsData.recvRoomIds;
+
     const isQuestion = state?.isQuestion
     let options = {
       msg: content,
@@ -123,8 +128,8 @@ export class MessageAPI {
       }, // 扩展消息
     }
 
-    const [msg] = await batchSendMsg('txt', [publicRoomId,...sendRoomIds], options)
-    this.store.dispatch(messageAction(msg.body, { isHistory: false }));
+    const [msg] = await batchSendMsg('txt', sendRoomIds, options);
+    this.store.dispatch(messageAction(msg.body, { isSend:true, isHistory: false }));
   }
 
   //图片消息
@@ -132,12 +137,12 @@ export class MessageAPI {
     // e.preventDefault();
     const state = this.store.getState();
     const loginUser = state?.propsData.userUuid;
-    const publicRoomId = state?.propsData?.chatRoomId;
+    const mainRoomId = state?.propsData?.chatRoomId;
     const roleType = state?.propsData.roleType;
     const roomUuid = state?.propsData.roomUuid;
     const userNickName = state?.propsData.userName;
     const userAvatarUrl = state?.loginUserInfo.avatarurl;
-    const sendRoomIds = state?.sendRoomIds;
+    const sendRoomIds = state?.propsData.sendRoomIds;
 
     var id = WebIM.conn.getUniqueId(); // 生成本地消息id
     // var msg = new WebIM.message('img', id); // 创建图片消息
@@ -156,7 +161,6 @@ export class MessageAPI {
       if (file.filetype.toLowerCase() in allowType) {
         var option = {
           file: file,
-          to: publicRoomId,
           from: loginUser,
           ext: {
             msgtype: MSG_TYPE.common, // 消息类型
@@ -179,10 +183,9 @@ export class MessageAPI {
           },
           flashUpload: WebIM.flashUpload,
         };
-
         try{
-          const [msg] = await batchSendMsg('img', [publicRoomId, ...sendRoomIds], option)
-          this.store.dispatch(messageAction(msg.body, { isHistory: false }));
+          const [msg] = await batchSendMsg('img', sendRoomIds, option)
+          this.store.dispatch(messageAction(msg.body, { isSend:true, isHistory: false }));
         } catch(err) {
           couterRef.current.value = null;
         }

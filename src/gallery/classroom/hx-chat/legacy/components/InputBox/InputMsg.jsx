@@ -15,6 +15,7 @@ import { Button } from '../Button';
 import './index.css';
 import ScreenshotMenu from './Screenshot';
 import { useShallowEqualSelector } from '../../utils';
+import { EduRoleTypeEnum } from 'agora-edu-core';
 
 // 展示表情
 export const ShowEomji = ({ getEmoji }) => {
@@ -47,6 +48,7 @@ export const InputMsg = ({ allMutePermission }) => {
     roomUuid,
     sendRoomIds,
     recvRoomIds,
+    userRoomIds,
     userNickName,
     userAvatarUrl,
     isAllMute,
@@ -57,8 +59,9 @@ export const InputMsg = ({ allMutePermission }) => {
       apis: state?.apis,
       loginUser: state?.propsData.userUuid,
       roomId: state?.room.info.id,
-      sendRoomIds: state?.sendRoomIds, 
+      sendRoomIds: state?.propsData.sendRoomIds, 
       recvRoomIds: state?.recvRoomIds, 
+      userRoomIds: state?.propsData.userRoomId,
       roleType: state?.propsData.roleType,
       roomUuid: state?.propsData.roomUuid,
       userNickName: state?.propsData.userName,
@@ -100,10 +103,11 @@ export const InputMsg = ({ allMutePermission }) => {
   // 全局禁言开关
   const onChangeMute = (val) => {
     if (!val) {
-      apis.muteAPI.setAllmute(roomId);
+      apis.muteAPI.setAllmute();
     } else {
-      apis.muteAPI.removeAllmute(roomId);
+      apis.muteAPI.removeAllmute();
     }
+ 
   };
 
   // 监听输入框变化

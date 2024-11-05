@@ -12,6 +12,7 @@ import {
 } from '../redux/actions/roomAction';
 import { WebIM } from '../utils/WebIM';
 import http from './base';
+import { uniq } from 'lodash';
 const joinRoom = (roomId) => {
   return WebIM.conn.joinChatRoom({
     roomId: roomId,
@@ -20,9 +21,20 @@ const joinRoom = (roomId) => {
 }
 
 const batchJoinRoom = (roomIds) => {
-  const tasks = []
+  let tasks = []
   for(let roomId of roomIds) {
     const task = joinRoom(roomId)
+    tasks.push(task)
+  }
+  return Promise.all(tasks)
+}
+
+const batchGetRoomInfo = (roomIds) => {
+  let tasks = []
+  for(let roomId of uniq(roomIds)){
+    const task = WebIM.conn.getChatRoomDetails({
+      chatRoomId: roomId, // 聊天室id
+    }).then(res => res.data[0])
     tasks.push(task)
   }
   return Promise.all(tasks)
@@ -43,59 +55,48 @@ export class ChatRoomAPI {
 
   // 加入聊天室
   joinRoom = async (params) => {
-    const { chatRoomId: roomId, chatGroup: { sendChatRoomIds=[], recvChatRoomIds=[] } = {}, userUuid, roleType } = params
+    const { chatRoomId: mainRoomId, sendRoomIds=[], recvRoomIds=[], userUuid, roleType } = params
     WebIM.conn.mr_cache = [];
 
-    await batchJoinRoom([roomId, ...sendChatRoomIds, ...recvChatRoomIds])
+    const roomIds = [mainRoomId, ...sendRoomIds, ...recvRoomIds]
+    await batchJoinRoom(roomIds)
     // message.success(transI18n('chat.join_room_success'));
-    this.getRoomInfo(roomId, roleType);
+    const [mainRoomInfo] = await batchGetRoomInfo(roomIds)
+
+    // 房间信息用主房间的
+    this.store.dispatch(roomInfo(mainRoomInfo));
+    // 主房间禁言其他房间也禁言
+    if (mainRoomInfo.mute) {
+      this.store.dispatch(roomAllMute(true));
+    }
+
+    // 主房间理论上包含所有成员
+    let newArr = [];
+    mainRoomInfo.affiliations.map((item) => {
+      if (item.owner) {
+        return;
+      } else {
+        newArr.push(item.member);
+      }
+    });
+    // 保存主房间所有用户
+    this.store.dispatch(roomUsers(newArr));
+ 
+    this.userInfoAPI.getUserInfo({ member: newArr });
+    this.getAnnouncement(mainRoomId);
+    if (roleType === ROLE.teacher.id || roleType === ROLE.assistant.id) {
+      this.muteAPI.getChatRoomMuteList(mainRoomId);
+    }
     // 学生登陆 加入聊天室成功后，检查自己是否被禁言
     if (roleType === ROLE.student.id) {
       this.muteAPI.getCurrentUserStatus();
     }
     if (roleType === ROLE.teacher.id || roleType === ROLE.assistant.id) {
-      this.getRoomsAdmin(roomId);
+      this.getRoomsAdmin(mainRoomId);
     }
-    this.chatHistoryAPI.getHistoryMessages(roomId);
-
-    this.store.dispatch(sendRoomIds(sendChatRoomIds))
-    this.store.dispatch(recvRoomIds(recvChatRoomIds))
+    this.chatHistoryAPI.getHistoryMessages();
   };
 
-  // 获取聊天室详情
-  getRoomInfo = (roomId, roleType) => {
-    let options = {
-      chatRoomId: roomId, // 聊天室id
-    };
-    WebIM.conn
-      .getChatRoomDetails(options)
-      .then((res) => {
-        this.store.dispatch(roomInfo(res.data[0]));
-        // 将成员存到 store
-        let newArr = [];
-        res.data[0].affiliations.map((item) => {
-          if (item.owner) {
-            return;
-          } else {
-            newArr.push(item.member);
-          }
-        });
-        this.store.dispatch(roomUsers(newArr));
-        // 判断是否全局禁言
-        if (res.data[0].mute) {
-          this.store.dispatch(roomAllMute(true));
-        }
-        this.userInfoAPI.getUserInfo({ member: newArr });
-        this.getAnnouncement(roomId);
-        if (roleType === ROLE.teacher.id || roleType === ROLE.assistant.id) {
-          this.muteAPI.getChatRoomMuteList(roomId);
-        }
-      })
-      .catch((err) => {
-        message.error(transI18n('chat.get_room_info'));
-        console.log('getRoomInfo>>>', err);
-      });
-  };
 
   // 获取群管理员
   getRoomsAdmin = (roomId) => {

@@ -63,6 +63,8 @@ export const Chat = ({
   // 直接在 propsData 中取值
   const isTeacher =
     roleType === ROLE.teacher.id || roleType === ROLE.assistant.id || roleType === ROLE.observer.id;
+
+  const isAssistant = roleType === ROLE.assistant.id ;
   // useEffect(() => {
   //   // 加载成员信息
   //   let _speakerTeacher = [];
@@ -174,7 +176,7 @@ export const Chat = ({
           {tabKey === CHAT_TABS_KEYS.chat && <MessageBox />}
           <InputBox />
         </TabPane>
-        {configUIVisible.memebers && isTeacher && (
+        {configUIVisible.memebers && isAssistant && (
           <TabPane tab={<MemberCount />} key={CHAT_TABS_KEYS.user}>
             <UserList
               roomUserList={userList}
@@ -215,8 +217,34 @@ export const Chat = ({
 
 const MemberCount = () => {
   const { memberCount } = useShallowEqualSelector((state) => {
+    // 主房间内包含所有用户
+    const roomUsers = state.room.roomUsers || []
+    const roomUsersInfo = state.room.roomUsersInfo || []
+    // 当前用户所在分组
+    const currGroupUuids = state.propsData.chatGroupUuids || []
+    console.log(">>>>>>>>>>>>>>>>>>>>currGroupUuids", currGroupUuids)
+
+    // 通过当前用户所在分组， 过滤出相同分组的用户
+    const members = roomUsers.filter(id => {
+      const user = roomUsersInfo[id]
+
+      if(user){
+        // 目标用户所在分组
+        const {chatGroupUuids = []} = user.ext ? JSON.parse(user.ext) : {}
+        console.log(">>>>>>>>>>>>>>>>>>>>chatGroupUuids", chatGroupUuids)
+        for(let userGroupUuid of chatGroupUuids){
+          // 当前用户所在分组包含目标用户所在分组，即表示在同一个房间
+          if(currGroupUuids.indexOf(userGroupUuid) !== -1){
+            return true
+          }
+        }
+      }
+      return false
+    })
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>members", members)
+
     return {
-      memberCount: _.get(state, 'room.memberCount', 0),
+      memberCount: members.length,
     };
   });
 

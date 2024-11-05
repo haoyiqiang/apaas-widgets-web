@@ -122,7 +122,7 @@ const App = observer(({ widget }: { widget: AgoraHXChatWidget }) => {
 
   const hxStore = {
     globalContext,
-    context: { ...widget.imUIConfig, ...widget.imConfig, ...roomInfo, ...localUserInfo },
+    context: { ...widget.imUIConfig, ...widget.imConfig, ...roomInfo, ...localUserInfo, chatGroupUuids: widget.chatGroupUuids, userRoomIds: widget.userChatRoomIds, recvRoomIds: widget.recvChatRoomIds, sendRoomIds: widget.sendChatRoomIds},
   };
 
   const getAgoraChatToken = useCallback(async () => {
@@ -169,8 +169,12 @@ const App = observer(({ widget }: { widget: AgoraHXChatWidget }) => {
 });
 
 export class AgoraHXChatWidget extends AgoraCloudClassWidget {
-  private _imConfig?: { chatRoomId: string; appName: string; orgName: string };
+  private _imConfig?: { chatRoomId: string; appName: string; orgName: string , chatGroup?:{groups?:Record<string, string>} };
+  private _recvChatRoomIds: string[] = []// 接受组
+  private _sendChatRoomIds: string[] = []// 发送组
   private _easemobUserId?: string;
+  private _chatGroupUuids: string[] = []// 用户所在分组
+
   private _dom?: HTMLElement;
   private _widgetStore = new WidgetChatUIStore(this);
   private _rendered = false;
@@ -183,6 +187,10 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
   }
   get hasPrivilege() {
     return false;
+  }
+
+  get chatGroupUuids() {
+    return this._chatGroupUuids
   }
 
   get imUIConfig() {
@@ -224,6 +232,21 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
     return this._imConfig;
   }
 
+  get userChatRoomIds() {
+    const groups = this._imConfig?.chatGroup?.groups || {}
+    return this._chatGroupUuids.map(uuid => {
+      return groups[uuid]
+    }).filter(item => item)
+  }
+
+  get recvChatRoomIds() {
+    return this._recvChatRoomIds
+  }
+
+  get sendChatRoomIds() {
+    return this._sendChatRoomIds
+  }
+
   get easemobUserId() {
     return this._easemobUserId;
   }
@@ -241,14 +264,21 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
 
   onPropertiesUpdate(properties: any) {
     console.log(">>>>>>>>>>>>>>>>onPropertiesUpdate", properties)
-
     this._imConfig = properties.extra;
     this._renderApp();
   }
 
   onUserPropertiesUpdate(userProperties: any) {
     console.log(">>>>>>>>>>>>>>>>onUserPropertiesUpdate", userProperties)
-
+    if(userProperties.chatGroupUuids){
+      this._chatGroupUuids = userProperties.chatGroupUuids
+    }
+    if(userProperties.sendChatRoomIds){
+      this._sendChatRoomIds = userProperties.sendChatRoomIds
+    }
+    if(userProperties.receiveChatRoomIds){
+      this._recvChatRoomIds = userProperties.receiveChatRoomIds
+    }
     this._easemobUserId = userProperties.userId;
     this._renderApp();
   }

@@ -2,6 +2,26 @@ import { WebIM } from '../utils/WebIM';
 import { roomAllMute, roomUserMute, isUserMute } from '../redux/actions/roomAction';
 import { SET_ALL_MUTE, REMOVE_ALL_MUTE, MUTE_USER, UNMUTE_USER, MUTE_CONFIG } from '../contants';
 import http from './base';
+import { EduRoleTypeEnum } from 'agora-edu-core';
+
+const batchMute = (roomIds, muted) => {
+  let tasks = []
+  for(let roomId of roomIds){
+    let task
+    if(muted){
+      task = WebIM.conn.disableSendChatRoomMsg({
+        chatRoomId: roomId
+      })
+    }else{
+      task = WebIM.conn.enableSendChatRoomMsg({
+        chatRoomId: roomId
+      })
+    }
+    
+    tasks.push(task)
+  }
+  return Promise.all(tasks)
+}
 
 export class MuteAPI {
   store = null;
@@ -115,23 +135,32 @@ export class MuteAPI {
   };
 
   // 一键禁言
-  setAllmute = (roomId) => {
-    let options = {
-      chatRoomId: roomId, // 聊天室id
-    };
-    WebIM.conn.disableSendChatRoomMsg(options).then((res) => {
-      this.messageAPI.sendCmdMsg(SET_ALL_MUTE);
-      this.store.dispatch(roomAllMute(true));
-    });
+  setAllmute = async () => {
+    const { roleType, chatRoomId, userRoomIds=[] } = this.store.getState().propsData
+
+    if(roleType == EduRoleTypeEnum.teacher){
+      // 老师禁言主房间
+      await batchMute([chatRoomId], true)
+    }else{
+      // 助教禁言子房间
+      await batchMute(userRoomIds, true)
+    }
+    this.messageAPI.sendCmdMsg(SET_ALL_MUTE);
+    this.store.dispatch(roomAllMute(true));
   };
   // 解除一键禁言
-  removeAllmute = (roomId) => {
-    let options = {
-      chatRoomId: roomId, // 聊天室id
-    };
-    WebIM.conn.enableSendChatRoomMsg(options).then((res) => {
-      this.messageAPI.sendCmdMsg(REMOVE_ALL_MUTE);
-      this.store.dispatch(roomAllMute(false));
-    });
+  removeAllmute = async () => {
+    const { roleType, chatRoomId, userRoomIds=[] } = this.store.getState().propsData
+
+    if(roleType == EduRoleTypeEnum.teacher){
+      // 老师禁言主房间
+      await batchMute([chatRoomId], false)
+    }else{
+      // 助教禁言子房间
+      await batchMute(userRoomIds, false)
+    }
+    this.messageAPI.sendCmdMsg(REMOVE_ALL_MUTE);
+    this.store.dispatch(roomAllMute(false));
+  
   };
 }

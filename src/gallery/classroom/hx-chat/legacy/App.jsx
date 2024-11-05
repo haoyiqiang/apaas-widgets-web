@@ -74,7 +74,6 @@ const App = function (props) {
   useEffect(() => {
     const propsData = { ...props.pluginStore.context };
 
-    console.log(">>>>>>>>>>>>>>>>>>>propsData", propsData)
     const { orgName, appName, chatRoomId, userUuid } = propsData;
 
 
@@ -86,7 +85,6 @@ const App = function (props) {
       store.dispatch(propsAction(propsData));
 
       initIMSDK(appkey);
-
       createListen(propsData, appkey);
 
       apis.loginAPI.loginWithToken(appkey, userUuid);
