@@ -10,7 +10,6 @@ export class UserInfoAPI {
 
   // 设置自己的用户属性
   setUserInfo = (data) => {
-    console.log(">>>>>>>>>>>>>>>setUserInfo", data)
     const { roleType, imAvatarUrl, userName, chatGroupUuids } = data
     const ext = JSON.stringify({
       role: roleType,
@@ -33,14 +32,11 @@ export class UserInfoAPI {
   // 获取用户属性
   getUserInfo = async ({ member }) => {
     let count = 0;
-    console.log(">>>>>>>>>>>>>>>>>>>>>res0", member)
 
     while (member.length > count) {
       let curmembers = member.slice(count, count + 100);
-      console.log(">>>>>>>>>>>>>>>>>>>>>res1", curmembers)
 
       await WebIM.conn.fetchUserInfoById(curmembers).then((res) => {
-        console.log(">>>>>>>>>>>>>>>>>>>>>res2", res)
         this.store.dispatch(roomUsersInfo(res.data));
       });
       count += 100;

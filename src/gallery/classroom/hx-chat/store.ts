@@ -159,12 +159,14 @@ export class WidgetChatUIStore {
                 ...this.fetchUsersListParams,
                 // teacher
                 role: 1,
+                nextId: 1,
                 userName: this.searchKeyword,
               }
             : {
                 ...this.fetchUsersListParams,
                 // teacher
                 role: 1,
+                nextId: 1,
               },
         );
 
@@ -177,6 +179,7 @@ export class WidgetChatUIStore {
         const assistantList = await this.fetchNextListByParam({
           // assistant
           role: 3,
+          nextId: 1,
           ...override,
         });
 
@@ -189,6 +192,7 @@ export class WidgetChatUIStore {
         const studentList = await this.fetchNextListByParam({
           // student
           role: 2,
+          nextId: 1,
           ...override,
         });
 

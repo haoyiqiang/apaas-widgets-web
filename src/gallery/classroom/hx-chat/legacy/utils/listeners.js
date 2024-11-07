@@ -78,10 +78,10 @@ export const createListener = (store) => {
         if (err.type === 604) return;
       },
       onTextMessage: (message) => {
-        console.log('onTextMessage>>>', message);
         const startTs = Date.now();
-        console.log(">>>>>>>>>>>>>>>>>>new_IM_Data", new_IM_Data.recvRoomIds)
         if (new_IM_Data.recvRoomIds.indexOf(message.to) !== -1) {
+          console.log('onTextMessage>>>', message);
+
           const newMessage = apis.messageAPI.convertCustomMessage(message);
           messageArr.push(newMessage);
           dispatchMessageAction();
@@ -90,8 +90,9 @@ export const createListener = (store) => {
         console.log('SAVE_ROOM_MESSAGE time:', endTs - startTs);
       },
       onPictureMessage: (message) => {
-        console.log('onPictureMessage>>>', message);
-        if (new_IM_Data.chatRoomId === message.to) {
+        if (new_IM_Data.recvRoomIds.indexOf(message.to) !== -1) {
+          console.log('onPictureMessage>>>', message);
+
           const showChat = store.getState().showChat;
           const isShowRed = store.getState().isTabKey !== CHAT_TABS_KEYS.chat;
           store.dispatch(showRedNotification(isShowRed));
@@ -102,14 +103,48 @@ export const createListener = (store) => {
         }
       },
       onCmdMessage: (message) => {
-        console.log('onCmdMessaeg>>>', message);
-        if (new_IM_Data.chatRoomId === message.to) {
+        if (new_IM_Data.recvRoomIds.indexOf(message.to) !== -1) {
+          console.log('onCmdMessaeg>>>', message);
+
           store.dispatch(
             messageAction(message, {
               showNotice: store.getState().isTabKey !== CHAT_TABS_KEYS.chat,
               isHistory: false,
             }),
           );
+          const roleType = store.getState().propsData?.roleType;
+          const isAdmins = roleType === ROLE.teacher.id || roleType === ROLE.assistant.id;
+          const currentLoginUser = store.getState().propsData.userUuid;
+          
+          switch(message.action){
+            case "setAllMute":
+              store.dispatch(roomAllMute(true));
+              break;
+            case "removeAllMute":
+              store.dispatch(roomAllMute(false));
+              break;
+            case "mute":
+
+              if (currentLoginUser === message.ext.muteMember) {
+                apis.muteAPI.setUserProperties();
+                if (isAdmins) {
+                  store.dispatch(roomUserMute(message.ext.muteMember, MUTE_CONFIG.mute));
+                }
+                store.dispatch(isUserMute(true))
+              }
+            
+              break
+            case "unmute":
+              if (currentLoginUser === message.ext.muteMember) {
+                apis.muteAPI.removeUserProperties();
+                if (isAdmins) {
+                  store.dispatch(roomUserMute(message.ext.muteMember, MUTE_CONFIG.unMute));
+                }
+                store.dispatch(isUserMute(false));
+              }
+             
+              break
+          }
           const showChat = store.getState().showChat;
           const isShowRed = store.getState().isTabKey !== CHAT_TABS_KEYS.chat;
           store.dispatch(showRedNotification(isShowRed));
@@ -119,14 +154,15 @@ export const createListener = (store) => {
         }
       },
       onPresence: (message) => {
-        console.log('onPresence>>>', message);
         const activeTabKey = store.getState().isTabKey !== CHAT_TABS_KEYS.notice;
         const roleType = store.getState().propsData?.roleType;
         const isAdmins = roleType === ROLE.teacher.id || roleType === ROLE.assistant.id;
+        // 这里只记录主房间事件，保证只有一次的业务
         if (new_IM_Data.chatRoomId !== message.gid) return;
+        console.log('onPresence>>>', message);
+
         const roomUserList = get(store.getState(), 'room.roomUsers');
         const showChat = store.getState().showChat;
-        const currentLoginUser = store.getState().propsData.userUuid;
         switch (message.type) {
           case 'memberJoinChatRoomSuccess':
             if (!isAdmins) return;
@@ -169,32 +205,6 @@ export const createListener = (store) => {
             if (!showChat) {
               store.dispatch(showRedNotification(true));
             }
-            break;
-          case 'muteChatRoom':
-            store.dispatch(roomAllMute(true));
-            break;
-          case 'rmChatRoomMute':
-            store.dispatch(roomAllMute(false));
-            break;
-          // 移除个人禁言
-          case 'removeMute':
-            if (currentLoginUser === message.to) {
-              apis.muteAPI.removeUserProperties();
-            }
-            if (isAdmins) {
-              store.dispatch(roomUserMute(message.to, MUTE_CONFIG.unMute));
-            }
-            store.dispatch(isUserMute(false));
-            break;
-          // 添加个人禁言
-          case 'addMute':
-            if (currentLoginUser === message.to) {
-              apis.muteAPI.setUserProperties();
-            }
-            if (isAdmins) {
-              store.dispatch(roomUserMute(message.to, MUTE_CONFIG.mute));
-            }
-            store.dispatch(isUserMute(true));
             break;
           default:
             break;

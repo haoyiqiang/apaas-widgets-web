@@ -187,7 +187,7 @@ export const Chat = ({
               onScroll={onScroll}></UserList>
           </TabPane>
         )}
-        {configUIVisible.announcement && (
+        {configUIVisible.announcement && isTeacher && (
           <TabPane
             tab={
               <div>
@@ -222,7 +222,6 @@ const MemberCount = () => {
     const roomUsersInfo = state.room.roomUsersInfo || []
     // 当前用户所在分组
     const currGroupUuids = state.propsData.chatGroupUuids || []
-    console.log(">>>>>>>>>>>>>>>>>>>>currGroupUuids", currGroupUuids)
 
     // 通过当前用户所在分组， 过滤出相同分组的用户
     const members = roomUsers.filter(id => {
@@ -231,7 +230,6 @@ const MemberCount = () => {
       if(user){
         // 目标用户所在分组
         const {chatGroupUuids = []} = user.ext ? JSON.parse(user.ext) : {}
-        console.log(">>>>>>>>>>>>>>>>>>>>chatGroupUuids", chatGroupUuids)
         for(let userGroupUuid of chatGroupUuids){
           // 当前用户所在分组包含目标用户所在分组，即表示在同一个房间
           if(currGroupUuids.indexOf(userGroupUuid) !== -1){
@@ -241,7 +239,6 @@ const MemberCount = () => {
       }
       return false
     })
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>members", members)
 
     return {
       memberCount: members.length,

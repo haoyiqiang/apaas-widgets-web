@@ -64,7 +64,7 @@ export class MessageAPI {
       }, //用户自扩展的消息内容（群聊用法相同）
     }
     const [msg] = await batchSendMsg('cmd', sendRoomIds, options)
-    this.store.dispatch(messageAction(msg.body, { isSend:true, isHistory: false }));
+    this.store.dispatch(messageAction(msg.body, {  isHistory: false }));
   }
 
   // 禁言消息
@@ -99,7 +99,7 @@ export class MessageAPI {
       },
     }
     const [msg] = await batchSendMsg('cmd', sendRoomIds, options)
-    this.store.dispatch(messageAction(msg.body, { isSend:true, isHistory: false }));
+    this.store.dispatch(messageAction(msg.body, {  isHistory: false }));
   };
 
   sendTxtMsg = async (content) => {
@@ -129,7 +129,7 @@ export class MessageAPI {
     }
 
     const [msg] = await batchSendMsg('txt', sendRoomIds, options);
-    this.store.dispatch(messageAction(msg.body, { isSend:true, isHistory: false }));
+    this.store.dispatch(messageAction(msg.body, {  isHistory: false }));
   }
 
   //图片消息
@@ -185,7 +185,7 @@ export class MessageAPI {
         };
         try{
           const [msg] = await batchSendMsg('img', sendRoomIds, option)
-          this.store.dispatch(messageAction(msg.body, { isSend:true, isHistory: false }));
+          this.store.dispatch(messageAction(msg.body, {  isHistory: false }));
         } catch(err) {
           couterRef.current.value = null;
         }

@@ -166,8 +166,9 @@ const reducer = (state = defaultState, action) => {
         },
       };
     case 'SAVE_ROOM_MESSAGE':
-      const { isSend, isHistory } = action.options;
+      const { isHistory } = action.options;
       const mainRoomId = state.room.info.id
+      const currUserId = state.propsData.userUuid
       const recvRoomIds = state.propsData.recvRoomIds
       let dataArray = data;
 
@@ -180,11 +181,11 @@ const reducer = (state = defaultState, action) => {
       msgs = state.messages.concat(dataArray);
 
       const msgIds = dataArray.filter((msg) => !!msg.ext.msgId).map((msg) => msg.ext.msgId);
-      // 只显示接受组的消息
-      msgs = msgs.filter((item) => (isSend || recvRoomIds.indexOf(item.to) !==-1) && !msgIds.includes(item.id));
+      // 只显示自己发送的和接受组的消息
+      msgs = msgs.filter((item) => ( item.from == currUserId || recvRoomIds.indexOf(item.to) !==-1) && !msgIds.includes(item.id));
 
       newMsgs = uniqBy(msgs, 'id');
-      newMsgs = newMsgs.slice(newMsgs.length - LOCAL_RETAIN_HISTORY_COUNT, newMsgs.length);
+      newMsgs = newMsgs.slice(newMsgs.length - LOCAL_RETAIN_HISTORY_COUNT, newMsgs.length).sort((a, b) => Number(a.time) - Number(b.time));
       return {
         ...state,
         messages: newMsgs,
