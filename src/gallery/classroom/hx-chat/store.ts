@@ -249,7 +249,7 @@ export class WidgetChatUIStore {
     //     userName: this.searchKeyword,
     //   });
 
-    const { host, appId, sessionInfo: { role, roomUuid  } } = EduClassroomConfig.shared;
+    const { host, appId, sessionInfo: { role, roomUuid  } } = this._widget.classroomConfig;
     
     const url = `${host}/edu/apps/${appId}/v2/rooms/${roomUuid}/users/page`
     

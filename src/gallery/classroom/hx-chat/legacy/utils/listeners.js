@@ -15,6 +15,7 @@ import { message } from 'antd';
 import { CHAT_TABS_KEYS, MUTE_CONFIG } from '../contants';
 import { WebIM } from './WebIM';
 import { ROLE, TEXT_MESSAGE_THROTTLE_TIME_MS, MEMBER_LIST_THROTTLE_TIME_MS } from '../contants';
+import { EduRoleTypeEnum } from 'agora-edu-core';
 
 export const createListener = (store) => {
   let messageFromArr = [];
@@ -113,38 +114,42 @@ export const createListener = (store) => {
             }),
           );
           const roleType = store.getState().propsData?.roleType;
+          const chatRoomId = store.getState().propsData?.chatRoomId
           const isAdmins = roleType === ROLE.teacher.id || roleType === ROLE.assistant.id;
           const currentLoginUser = store.getState().propsData.userUuid;
           
-          switch(message.action){
-            case "setAllMute":
-              store.dispatch(roomAllMute(true));
-              break;
-            case "removeAllMute":
-              store.dispatch(roomAllMute(false));
-              break;
-            case "mute":
+          if(roleType != EduRoleTypeEnum.teacher){
+            switch(message.action){
+              case "setAllMute":
+                store.dispatch(roomAllMute(true));
+                break;
+              case "removeAllMute":
+                store.dispatch(roomAllMute(false));
+                break;
+              case "mute":
 
-              if (currentLoginUser === message.ext.muteMember) {
-                apis.muteAPI.setUserProperties();
-                if (isAdmins) {
-                  store.dispatch(roomUserMute(message.ext.muteMember, MUTE_CONFIG.mute));
+                if (currentLoginUser === message.ext.muteMember) {
+                  apis.muteAPI.setUserProperties();
+                  if (isAdmins) {
+                    store.dispatch(roomUserMute(message.ext.muteMember, MUTE_CONFIG.mute));
+                  }
+                  store.dispatch(isUserMute(true))
                 }
-                store.dispatch(isUserMute(true))
-              }
-            
-              break
-            case "unmute":
-              if (currentLoginUser === message.ext.muteMember) {
-                apis.muteAPI.removeUserProperties();
-                if (isAdmins) {
-                  store.dispatch(roomUserMute(message.ext.muteMember, MUTE_CONFIG.unMute));
+              
+                break
+              case "unmute":
+                if (currentLoginUser === message.ext.muteMember) {
+                  apis.muteAPI.removeUserProperties();
+                  if (isAdmins) {
+                    store.dispatch(roomUserMute(message.ext.muteMember, MUTE_CONFIG.unMute));
+                  }
+                  store.dispatch(isUserMute(false));
                 }
-                store.dispatch(isUserMute(false));
-              }
-             
-              break
+              
+                break
+            }
           }
+
           const showChat = store.getState().showChat;
           const isShowRed = store.getState().isTabKey !== CHAT_TABS_KEYS.chat;
           store.dispatch(showRedNotification(isShowRed));

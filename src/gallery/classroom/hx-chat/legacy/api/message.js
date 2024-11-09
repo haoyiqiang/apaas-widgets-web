@@ -4,6 +4,7 @@ import { messageAction } from '../redux/actions/messageAction';
 import { message } from 'antd';
 import { transI18n } from 'agora-common-libs';
 import { uniq } from 'lodash';
+import { EduRoleTypeEnum } from 'agora-edu-core';
 const sendMsg = (type, options) => {
   return new Promise((resolve, reject) => {
       let id = WebIM.conn.getUniqueId(); // 生成本地消息id
@@ -72,6 +73,8 @@ export class MessageAPI {
     const state = this.store.getState();
     const mainRoomId = state?.propsData.chatRoomId;
     const sendRoomIds = state?.propsData.sendRoomIds;
+    const userRoomIds = state?.propsData.userRoomIds;
+
     const roomUuid = state?.propsData.roomUuid;
     const roleType = state?.propsData.roleType;
     const loginName = state?.propsData.userName;
