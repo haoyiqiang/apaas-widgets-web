@@ -17,6 +17,7 @@ export const EditAnnouncement = () => {
       announcement: state?.room.announcement,
     };
   });
+
   const store = useStore();
   // 输入公告长度
   const [count, setCount] = useState(announcement.length);
