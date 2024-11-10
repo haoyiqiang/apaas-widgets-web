@@ -39,6 +39,7 @@ import subWorkerString from '@netless/appliance-plugin/dist/subWorker.js?raw';
 
 import { ApplianceMultiPlugin } from '@netless/appliance-plugin';
 import { DevicePlatform, getPlatform } from 'agora-edu-core';
+import { isElectron } from '../../utils/isElectron';
 const fullWorkerBlob = new Blob([fullWorkerString], {type: 'text/javascript'});
 const fullWorkerUrl = URL.createObjectURL(fullWorkerBlob);
 const subWorkerBlob = new Blob([subWorkerString], {type: 'text/javascript'});
@@ -152,9 +153,8 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
             wm.destroy();
             return;
           }
-          const platform = getPlatform()
         
-          const canvasOpt = platform == (DevicePlatform.MACOS || DevicePlatform.WINDOWS) ? {
+          const canvasOpt = isElectron() ? {
             contextType: '2d'
           } : undefined
           const params = {
@@ -343,17 +343,6 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
     const windowManager = this._windowManager;
     const scenePath = `/${config.resourceUuid}`;
     if (config.resourceHasAnimation) {
-      // windowManager?.addApp({
-      //   kind: 'Slide',
-      //   options: {
-      //     scenePath: `/ppt${scenePath}`,
-      //     title: config.title,
-      //   },
-      //   attributes: {
-      //     taskId: config.taskUuid,
-      //     url: config.urlPrefix,
-      //   }
-      // })
       windowManager?.addApp({
         kind: 'Slide',
         options: {
@@ -361,8 +350,8 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
           title: config.title,
         },
         attributes: {
-          taskId: "06415a307f2011ec8bdc15d18ec9acc7",
-          url: "https://convertcdn.netless.group/dynamicConvert",
+          taskId: config.taskUuid,
+          url: config.urlPrefix,
         }
       })
     } else {
