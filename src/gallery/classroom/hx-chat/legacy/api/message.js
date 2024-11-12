@@ -12,9 +12,12 @@ const sendMsg = (type, options) => {
       msg.set({
           ...options,
           success: function(id, serverId) {
+              console.log("sendMsg succ>>> ", options)
+
               resolve(msg)
           },
           fail: function(err){
+              console.log("sendMsg fail>>> ", options)
               reject(err)
           }
       });

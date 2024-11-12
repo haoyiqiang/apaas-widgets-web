@@ -23,17 +23,18 @@ const Edit = ({ onChangeStatus }) => {
 export const ShowAnnouncement = () => {
   const [visible, setVisible] = useState(false);
   const store = useStore();
-  const { apis, roomId, Announcement, roleType } = useShallowEqualSelector((state) => {
+  const { apis, roomId, Announcement, roleType, chatGroupUuids } = useShallowEqualSelector((state) => {
     return {
       apis: state?.apis,
       roomId: state?.room.info.id,
       Announcement: state?.room.announcement,
-      roleType: state?.propsData.roleType
+      roleType: state?.propsData.roleType,
+      chatGroupUuids: state?.propsData.chatGroupUuids
     };
   });
   // 在propsData 取值
   const isTeacher = roleType === ROLE.teacher.id;
-  const isAssistant = roleType === ROLE.assistant.id;
+  const isMainAssistant = roleType === ROLE.assistant.id && chatGroupUuids.length == 0;
 
   const callback = () => {
     hideModal();
@@ -57,7 +58,7 @@ export const ShowAnnouncement = () => {
       {Announcement.length > 0 ? (
         <div className="fcr-hx-announcement">
           <div className="fcr-hx-announcement-box" id="deleteModal">
-            {(isTeacher || isAssistant) && (
+            {(isTeacher || isMainAssistant) && (
               <div className="fcr-hx-menu">
                 {/* updateAnnouncement(roomId, "" */}
                 <span
@@ -88,13 +89,13 @@ export const ShowAnnouncement = () => {
                 {' '}
                 {transI18n('chat.default_announcement')}
               </span>
-              {(isTeacher || isAssistant) && (
+              {(isTeacher || isMainAssistant) && (
                 <span className="fcr-hx-no-notice-text">
                   {' '}
                   {transI18n('chat.sentence_connector')}
                 </span>
               )}
-              {(isTeacher || isAssistant) && <Edit onChangeStatus={onChangeStatus} />}
+              {(isTeacher || isMainAssistant) && <Edit onChangeStatus={onChangeStatus} />}
             </div>
           </div>
         </div>

@@ -29,6 +29,7 @@ export const HXChatRoom = ({
   fetchNextUsersList,
   startAutoFetch,
   stopAutoFetch,
+  memberCount
 }) => {
   store = chatStore;
   const chatAPIs = React.useMemo(() => {
@@ -77,6 +78,7 @@ export const HXChatRoom = ({
           userList={userList}
           keyWordChangeHandle={keyWordChangeHandle}
           hasMoreUsers={hasMoreUsers}
+          memberCount={memberCount}
           fetchNextUsersList={fetchNextUsersList}
           startAutoFetch={startAutoFetch}
           stopAutoFetch={stopAutoFetch}

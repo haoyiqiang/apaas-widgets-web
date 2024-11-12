@@ -20,6 +20,7 @@ import ReactDOM from 'react-dom';
 import { WidgetChatUIStore } from './store';
 import { FcrChatRoomApp } from './fcr-chatroom';
 import createStore from './legacy/redux/store';
+import { ROLE } from './legacy/contants';
 
 const App = observer(({ widget }: { widget: AgoraHXChatWidget }) => {
   const widgetStore = widget.widgetStore as WidgetChatUIStore;
@@ -153,6 +154,7 @@ const App = observer(({ widget }: { widget: AgoraHXChatWidget }) => {
           widgetStore.onKeyWordChange(data);
         }}
         hasMoreUsers={widgetStore.hasMoreUsers}
+        memberCount={widgetStore.memberCount}
         fetchNextUsersList={(data: Partial<FetchUserParam> | undefined, reset: boolean) =>
           widgetStore.fetchNextUsersList(data, reset)
         }
@@ -339,8 +341,8 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
   }
 
   enableAutoFetch(enabled: boolean) {
-    // if the local user is teacher
-    if (this.classroomConfig.sessionInfo.role === 1) {
+    // 只有子房间助教有成员列表，需要每隔10秒刷新一次
+    if (this.classroomConfig.sessionInfo.role === ROLE.assistant.id && this._chatGroupUuids.length > 0) {
       if (enabled) {
         console.log('enableAutoFetch: true');
         //清除定时器

@@ -79,9 +79,9 @@ export const createListener = (store) => {
         if (err.type === 604) return;
       },
       onTextMessage: (message) => {
+        console.log('onTextMessage>>>', new_IM_Data.recvRoomIds, message);
         const startTs = Date.now();
         if (new_IM_Data.recvRoomIds.indexOf(message.to) !== -1) {
-          console.log('onTextMessage>>>', message);
 
           const newMessage = apis.messageAPI.convertCustomMessage(message);
           messageArr.push(newMessage);
@@ -91,8 +91,8 @@ export const createListener = (store) => {
         console.log('SAVE_ROOM_MESSAGE time:', endTs - startTs);
       },
       onPictureMessage: (message) => {
+        console.log('onPictureMessage>>>', new_IM_Data.recvRoomIds, message);
         if (new_IM_Data.recvRoomIds.indexOf(message.to) !== -1) {
-          console.log('onPictureMessage>>>', message);
 
           const showChat = store.getState().showChat;
           const isShowRed = store.getState().isTabKey !== CHAT_TABS_KEYS.chat;
@@ -104,8 +104,8 @@ export const createListener = (store) => {
         }
       },
       onCmdMessage: (message) => {
+        console.log('onCmdMessaeg>>>', new_IM_Data.recvRoomIds, message);
         if (new_IM_Data.recvRoomIds.indexOf(message.to) !== -1) {
-          console.log('onCmdMessaeg>>>', message);
 
           store.dispatch(
             messageAction(message, {

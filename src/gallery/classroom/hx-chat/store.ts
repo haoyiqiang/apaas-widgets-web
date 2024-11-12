@@ -19,6 +19,9 @@ export class WidgetChatUIStore {
   @observable
   showChat = false;
 
+  @observable
+  memberCount = 0
+
   /**
    * 检索字符串
    */
@@ -144,6 +147,7 @@ export class WidgetChatUIStore {
     if (this._isFetchingList) {
       return;
     }
+    let totalCount = 0
 
     if (reset) {
       const list = [] as any[];
@@ -170,6 +174,7 @@ export class WidgetChatUIStore {
               },
         );
 
+        totalCount += teacherList.total
         list.push(...teacherList.list);
       } catch (e) {
         console.error(e);
@@ -180,9 +185,11 @@ export class WidgetChatUIStore {
           // assistant
           role: 3,
           nextId: 1,
+          chatGroupUuids: this._widget.chatGroupUuids.toString(),
           ...override,
         });
 
+        totalCount += assistantList.total
         list.push(...assistantList.list);
       } catch (e) {
         console.error(e);
@@ -193,9 +200,11 @@ export class WidgetChatUIStore {
           // student
           role: 2,
           nextId: 1,
+          chatGroupUuids: this._widget.chatGroupUuids.toString(),
           ...override,
         });
 
+        totalCount += studentList.total
         list.push(...studentList.list);
 
         nextId = studentList.nextId;
@@ -204,6 +213,7 @@ export class WidgetChatUIStore {
       }
 
       runInAction(() => {
+        this.memberCount = totalCount
         this._usersNextPageId = nextId;
 
         this._usersList = list;
@@ -218,6 +228,7 @@ export class WidgetChatUIStore {
         const studentList = await this.fetchNextListByParam({
           // student
           role: 2,
+          chatGroupUuids: this._widget.chatGroupUuids.toString(),
           ...override,
         });
 
@@ -259,7 +270,7 @@ export class WidgetChatUIStore {
         type: params.type,
         pageNo: params.nextId,
         pageSize: params.count,
-        chatGroupUuids: this._widget.chatGroupUuids.toString()
+        chatGroupUuids: params.chatGroupUuids
       }
     })
 
@@ -268,7 +279,7 @@ export class WidgetChatUIStore {
     const list = await this.getUserInfoList(
       data.list.map((item) => item.userProperties.widgets.easemobIM.userId),
     );
-    return { nextId: data.pageNo + 1, list };
+    return { total: data.total, nextId: data.pageNo + 1, list };
   }
 
   /**
@@ -276,6 +287,7 @@ export class WidgetChatUIStore {
    */
   @action.bound
   resetUsersList() {
+    this.memberCount = 0
     this._usersNextPageId = 0;
     this.fetchNextUsersList({}, true);
   }

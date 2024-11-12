@@ -22,7 +22,8 @@ const joinRoom = (roomId) => {
 
 const batchJoinRoom = (roomIds) => {
   let tasks = []
-  for(let roomId of roomIds) {
+  console.log("joinRoom>>>", uniq(roomIds))
+  for(let roomId of uniq(roomIds)) {
     const task = joinRoom(roomId)
     tasks.push(task)
   }

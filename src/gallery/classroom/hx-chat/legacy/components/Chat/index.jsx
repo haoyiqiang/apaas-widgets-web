@@ -30,6 +30,7 @@ export const Chat = ({
   fetchNextUsersList,
   startAutoFetch,
   stopAutoFetch,
+  memberCount,
 }) => {
   const [tabKey, setTabKey] = useState(CHAT_TABS_KEYS.chat);
   // const [roomUserList, setRoomUserList] = useState([]);
@@ -45,6 +46,7 @@ export const Chat = ({
     showMIniIcon,
     // memberCount,
     configUIVisible,
+    chatGroupUuids
   } = useShallowEqualSelector((state) => {
     return {
       // isLogin: _.get(state, 'isLogin'),
@@ -52,6 +54,7 @@ export const Chat = ({
       showRed: _.get(state, 'showRed'),
       showAnnouncementNotice: _.get(state, 'showAnnouncementNotice'),
       roleType: _.get(state, 'propsData.roleType', ''),
+      chatGroupUuids: _.get(state, "propsData.chatGroupUuids", []),
       // roomUsers: _.get(state, 'room.roomUsers', []),
       // memberCount: _.get(state, 'room.memberCount', 0),
       // roomUsersInfo: _.get(state, 'room.roomUsersInfo', {}),
@@ -64,7 +67,8 @@ export const Chat = ({
   const isTeacher =
     roleType === ROLE.teacher.id || roleType === ROLE.assistant.id || roleType === ROLE.observer.id;
 
-  const isAssistant = roleType === ROLE.assistant.id ;
+  const isAssistant = chatGroupUuids.length > 0 && roleType === ROLE.assistant.id ;
+  const isMainAssistant = chatGroupUuids.length == 0 && roleType == ROLE.assistant.id;
   // useEffect(() => {
   //   // 加载成员信息
   //   let _speakerTeacher = [];
@@ -176,8 +180,8 @@ export const Chat = ({
           {tabKey === CHAT_TABS_KEYS.chat && <MessageBox />}
           <InputBox />
         </TabPane>
-        {configUIVisible.memebers && isAssistant && (
-          <TabPane tab={<MemberCount />} key={CHAT_TABS_KEYS.user}>
+        {configUIVisible.memebers && isAssistant && !isMainAssistant && (
+          <TabPane tab={<MemberCount memberCount={memberCount}/>} key={CHAT_TABS_KEYS.user}>
             <UserList
               roomUserList={userList}
               keyword={searchKeyword}
@@ -215,36 +219,7 @@ export const Chat = ({
   );
 };
 
-const MemberCount = () => {
-  const { memberCount } = useShallowEqualSelector((state) => {
-    // 主房间内包含所有用户
-    const roomUsers = state.room.roomUsers || []
-    const roomUsersInfo = state.room.roomUsersInfo || []
-    // 当前用户所在分组
-    const currGroupUuids = state.propsData.chatGroupUuids || []
-
-    // 通过当前用户所在分组， 过滤出相同分组的用户
-    const members = roomUsers.filter(id => {
-      const user = roomUsersInfo[id]
-
-      if(user){
-        // 目标用户所在分组
-        const {chatGroupUuids = []} = user.ext ? JSON.parse(user.ext) : {}
-        for(let userGroupUuid of chatGroupUuids){
-          // 当前用户所在分组包含目标用户所在分组，即表示在同一个房间
-          if(currGroupUuids.indexOf(userGroupUuid) !== -1){
-            return true
-          }
-        }
-      }
-      return false
-    })
-
-    return {
-      memberCount: members.length,
-    };
-  });
-
+const MemberCount = ({memberCount}) => {
   const textContent =
     memberCount > 0
       ? `${transI18n('chat.members')}(${memberCount})`

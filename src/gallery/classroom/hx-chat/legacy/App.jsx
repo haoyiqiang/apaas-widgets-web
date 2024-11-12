@@ -39,6 +39,7 @@ const App = function (props) {
     fetchNextUsersList,
     startAutoFetch,
     stopAutoFetch,
+    memberCount
   } = props;
   const { apis, showChat, showRed, showAnnouncementNotice, configUIVisible } =
     useShallowEqualSelector((state) => {
@@ -101,6 +102,7 @@ const App = function (props) {
             height: configUIVisible.isFullSize ? '100%' : '530px',
           }}>
           <Chat
+            memberCount={memberCount}
             searchKeyword={searchKeyword}
             userList={userList}
             keyWordChangeHandle={keyWordChangeHandle}

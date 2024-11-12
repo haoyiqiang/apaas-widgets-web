@@ -41,6 +41,7 @@ export class ChatHistoryAPI {
       isGroup: true,
       count: HISTORY_COUNT,
     })
+
     for(let item of list) {
       const historyMsg = item;
       let deleteMsgId = [];
