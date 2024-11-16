@@ -1,10 +1,9 @@
 import { WebIM } from '../utils/WebIM';
-import { MSG_TYPE } from '../contants';
+import { MSG_TYPE, ROLE } from '../contants';
 import { messageAction } from '../redux/actions/messageAction';
 import { message } from 'antd';
 import { transI18n } from 'agora-common-libs';
 import { uniq } from 'lodash';
-import { EduRoleTypeEnum } from 'agora-edu-core';
 const sendMsg = (type, options) => {
   return new Promise((resolve, reject) => {
       let id = WebIM.conn.getUniqueId(); // 生成本地消息id
@@ -77,11 +76,15 @@ export class MessageAPI {
     const mainRoomId = state?.propsData.chatRoomId;
     const sendRoomIds = state?.propsData.sendRoomIds;
     const userRoomIds = state?.propsData.userRoomIds;
-
+    const chatGroupUuids = state?.propsData.chatGroupUuids;
     const roomUuid = state?.propsData.roomUuid;
     const roleType = state?.propsData.roleType;
     const loginName = state?.propsData.userName;
     const loginUser = state?.propsData.userUuid;
+
+    // 主讲和总助教的禁言影响所有房间，除此之外只影响自己房间
+    const isTeacher = roleType == ROLE.teacher.id
+    const isMainAsistant = roleType == ROLE.assistant.id && chatGroupUuids.length == 0
     let options = {
       action: action, //用户自定义，cmd消息必填
       chatType: 'chatRoom',
@@ -104,7 +107,10 @@ export class MessageAPI {
         console.log('Fail'); //如禁言、拉黑后发送消息会失败
       },
     }
-    const [msg] = await batchSendMsg('cmd', sendRoomIds, options)
+    
+    // 主讲和总助教，发送到全部房间，子助教，发送到自己房间
+    const roomIds = (isTeacher || isMainAsistant) ? sendRoomIds : userRoomIds
+    const [msg] = await batchSendMsg('cmd', roomIds, options)
     this.store.dispatch(messageAction(msg.body, {  isHistory: false }));
   };
 

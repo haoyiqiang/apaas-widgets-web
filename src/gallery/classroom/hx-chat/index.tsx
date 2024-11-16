@@ -154,7 +154,6 @@ const App = observer(({ widget }: { widget: AgoraHXChatWidget }) => {
           widgetStore.onKeyWordChange(data);
         }}
         hasMoreUsers={widgetStore.hasMoreUsers}
-        memberCount={widgetStore.memberCount}
         fetchNextUsersList={(data: Partial<FetchUserParam> | undefined, reset: boolean) =>
           widgetStore.fetchNextUsersList(data, reset)
         }
@@ -190,6 +189,11 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
   get hasPrivilege() {
     return false;
   }
+
+  get chatRoomId() {
+    return this._imConfig?.chatRoomId || ""
+  }
+
 
   get chatGroupUuids() {
     return this._chatGroupUuids
@@ -342,7 +346,7 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
 
   enableAutoFetch(enabled: boolean) {
     // 只有子房间助教有成员列表，需要每隔10秒刷新一次
-    if (this.classroomConfig.sessionInfo.role === ROLE.assistant.id && this._chatGroupUuids.length > 0) {
+    if (this.classroomConfig.sessionInfo.role === ROLE.assistant.id) {
       if (enabled) {
         console.log('enableAutoFetch: true');
         //清除定时器

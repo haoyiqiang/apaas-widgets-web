@@ -72,4 +72,5 @@
 
 .fcr-hx-mute-icon {
   cursor: pointer;
+  flex-shrink: 0;
 }

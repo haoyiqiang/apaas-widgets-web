@@ -6,14 +6,16 @@ export class AgoraIM {
     type: 'easemob',
     opt: {
       appKey: string;
-      roomId: string;
+      mainRoomId: string;
+      sendRoomIds: string[]
+      recvRoomIds: string[]
       userInfo: AgoraIMUserInfo<AgoraIMUserInfoExt>;
       ext: { roomUuid: string };
     },
   ): AgoraIMBase {
     switch (type) {
       case 'easemob':
-        return new FcrChatRoom(opt.appKey, opt.roomId, opt.userInfo, opt.ext);
+        return new FcrChatRoom(opt);
     }
   }
 }

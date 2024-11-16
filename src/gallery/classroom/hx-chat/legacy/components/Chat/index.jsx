@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState, Fragment } from 'react';
+import { useState, Fragment, useMemo } from 'react';
 import { useStore } from 'react-redux';
 import { Tabs } from 'antd';
 import { MessageBox } from '../MessageBox';
@@ -18,6 +18,7 @@ import notice from '../../themes/img/notice.png';
 // import assign from 'lodash/assign';
 import './index.css';
 import { useShallowEqualSelector } from '../../utils';
+import { EduRoleTypeEnum } from 'agora-edu-core';
 
 const { TabPane } = Tabs;
 
@@ -30,7 +31,6 @@ export const Chat = ({
   fetchNextUsersList,
   startAutoFetch,
   stopAutoFetch,
-  memberCount,
 }) => {
   const [tabKey, setTabKey] = useState(CHAT_TABS_KEYS.chat);
   // const [roomUserList, setRoomUserList] = useState([]);
@@ -67,8 +67,8 @@ export const Chat = ({
   const isTeacher =
     roleType === ROLE.teacher.id || roleType === ROLE.assistant.id || roleType === ROLE.observer.id;
 
-  const isAssistant = chatGroupUuids.length > 0 && roleType === ROLE.assistant.id ;
-  const isMainAssistant = chatGroupUuids.length == 0 && roleType == ROLE.assistant.id;
+  const isAssistant =  roleType === ROLE.assistant.id ;
+
   // useEffect(() => {
   //   // 加载成员信息
   //   let _speakerTeacher = [];
@@ -137,7 +137,6 @@ export const Chat = ({
       default:
         break;
     }
-
     if (key === 'USER') {
       fetchNextUsersList({}, true);
       startAutoFetch();
@@ -155,7 +154,7 @@ export const Chat = ({
   const onScroll = () => {
     stopAutoFetch();
   };
-
+  console.log(">>>>>>>>>>>>>>>>>configUIVisible", configUIVisible)
   return (
     <div>
       <Tabs onChange={onTabChange} activeKey={tabKey} className={'chat-widget'}>
@@ -180,8 +179,8 @@ export const Chat = ({
           {tabKey === CHAT_TABS_KEYS.chat && <MessageBox />}
           <InputBox />
         </TabPane>
-        {configUIVisible.memebers && isAssistant && !isMainAssistant && (
-          <TabPane tab={<MemberCount memberCount={memberCount}/>} key={CHAT_TABS_KEYS.user}>
+        {configUIVisible.memebers && (isAssistant || isTeacher) && (
+          <TabPane tab={<MemberCount roleType={roleType} roomUserList={userList}/>} key={CHAT_TABS_KEYS.user}>
             <UserList
               roomUserList={userList}
               keyword={searchKeyword}
@@ -191,7 +190,7 @@ export const Chat = ({
               onScroll={onScroll}></UserList>
           </TabPane>
         )}
-        {configUIVisible.announcement && isTeacher && (
+        {configUIVisible.announcement  && (
           <TabPane
             tab={
               <div>
@@ -219,7 +218,35 @@ export const Chat = ({
   );
 };
 
-const MemberCount = ({memberCount}) => {
+const MemberCount = ({roleType, roomUserList}) => {
+  const { chatGroupUuids } = useShallowEqualSelector((state) => {
+    return {
+      chatGroupUuids: state.propsData.chatGroupUuids,
+    };
+  });
+  const memberCount = useMemo(() => {
+    const isTeacher = roleType == EduRoleTypeEnum.teacher
+    const isMainAsistant =  chatGroupUuids.length == 0 && roleType == EduRoleTypeEnum.assistant
+    if(isTeacher || isMainAsistant){
+      return roomUserList.filter(user => {
+        // 主讲和总助教老师只显示学生数量
+        const {role} = JSON.parse(user.ext)
+        return role == EduRoleTypeEnum.student
+      }).length
+    }else{
+       // 学生和子助教: 一个房间的学生数量
+      return roomUserList.filter(user => {
+        const { role, chatGroupUuids: uuids = [] } = JSON.parse(user.ext)
+        for(let uuid of uuids){
+          if(role == EduRoleTypeEnum.student && chatGroupUuids.indexOf(uuid) !== -1){
+            // 一个房间
+            return true
+          }
+        }
+        return false
+      }).length
+    }
+  }, [roleType, roomUserList])
   const textContent =
     memberCount > 0
       ? `${transI18n('chat.members')}(${memberCount})`

@@ -69,6 +69,7 @@ export class RoomStore {
   private _addEventListeners() {
     this._fcrChatRoom.on(AgoraIMEvents.AllUserMuted, this._handleAllUserMuted);
     this._fcrChatRoom.on(AgoraIMEvents.AllUserUnmuted, this._handleAllUserUnmuted);
+
     this._widget.addBroadcastListener({
       messageType: AgoraExtensionRoomEvent.MobileCallStateChanged,
       onMessage: this._handleMobileCallStateChanged,
@@ -213,10 +214,11 @@ export class RoomStore {
     this.allMuted = false;
   }
   async getChatRoomDetails() {
-    const { mute } = await this._fcrChatRoom.getChatRoomDetails();
-    runInAction(() => {
-      this.allMuted = mute;
-    });
+
+    // const { mute } = await this._fcrChatRoom.getChatRoomDetails();
+    // runInAction(() => {
+    //   this.allMuted = mute;
+    // });
   }
   @action.bound
   private _handleOrientationChanged(params: {

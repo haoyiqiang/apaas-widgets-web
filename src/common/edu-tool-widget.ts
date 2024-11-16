@@ -94,6 +94,8 @@ export abstract class AgoraEduToolWidget extends AgoraCloudClassWidget {
   }
 
   get controlled() {
-    return this.hasPrivilege;
+    const { role } = this.classroomConfig.sessionInfo;
+    // return this.hasPrivilege;
+    return role == 1
   }
 }

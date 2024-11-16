@@ -19,9 +19,6 @@ export class WidgetChatUIStore {
   @observable
   showChat = false;
 
-  @observable
-  memberCount = 0
-
   /**
    * 检索字符串
    */
@@ -174,7 +171,6 @@ export class WidgetChatUIStore {
               },
         );
 
-        totalCount += teacherList.total
         list.push(...teacherList.list);
       } catch (e) {
         console.error(e);
@@ -185,11 +181,9 @@ export class WidgetChatUIStore {
           // assistant
           role: 3,
           nextId: 1,
-          chatGroupUuids: this._widget.chatGroupUuids.toString(),
           ...override,
         });
 
-        totalCount += assistantList.total
         list.push(...assistantList.list);
       } catch (e) {
         console.error(e);
@@ -204,7 +198,6 @@ export class WidgetChatUIStore {
           ...override,
         });
 
-        totalCount += studentList.total
         list.push(...studentList.list);
 
         nextId = studentList.nextId;
@@ -213,7 +206,6 @@ export class WidgetChatUIStore {
       }
 
       runInAction(() => {
-        this.memberCount = totalCount
         this._usersNextPageId = nextId;
 
         this._usersList = list;
@@ -270,6 +262,7 @@ export class WidgetChatUIStore {
         type: params.type,
         pageNo: params.nextId,
         pageSize: params.count,
+        userName: this.searchKeyword,
         chatGroupUuids: params.chatGroupUuids
       }
     })
@@ -287,7 +280,6 @@ export class WidgetChatUIStore {
    */
   @action.bound
   resetUsersList() {
-    this.memberCount = 0
     this._usersNextPageId = 0;
     this.fetchNextUsersList({}, true);
   }

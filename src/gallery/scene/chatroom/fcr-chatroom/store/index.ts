@@ -32,7 +32,7 @@ export class FcrChatRoomStore {
         nickName: userName,
         avatarUrl:
           'https://download-sdk.oss-cn-beijing.aliyuncs.com/downloads/IMDemo/avatar/Image1.png',
-        ext: { role, userUuid },
+        ext: { role, userUuid, chatGroupUuids:[] },
       },
       ext: {
         roomUuid: this._widget.classroomConfig.sessionInfo.roomUuid,

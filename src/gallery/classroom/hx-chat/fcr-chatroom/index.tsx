@@ -14,7 +14,7 @@ export const FcrChatRoomApp = ({ widget }: { widget: AgoraHXChatWidget }) => {
     return imConfig?.orgName + '#' + imConfig?.appName;
   }, [imConfig?.appName, imConfig?.orgName]);
   const storeRef = useRef<FcrChatRoomStore>(
-    new FcrChatRoomStore(widget, appKey, imConfig?.chatRoomId || ''),
+    new FcrChatRoomStore(widget, appKey, imConfig?.chatRoomId ?? ""),
   );
   useEffect(() => {
     addResourceBundle('zh', im_CN);
