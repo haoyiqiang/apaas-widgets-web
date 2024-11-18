@@ -154,7 +154,6 @@ export const Chat = ({
   const onScroll = () => {
     stopAutoFetch();
   };
-  console.log(">>>>>>>>>>>>>>>>>configUIVisible", configUIVisible)
   return (
     <div>
       <Tabs onChange={onTabChange} activeKey={tabKey} className={'chat-widget'}>

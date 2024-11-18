@@ -86,7 +86,6 @@ const App = function (props) {
 
       initIMSDK(appkey);
       createListen(propsData, appkey);
-      console.log(">>>>>>>>>>>>>>>>>>>>appkey", appkey)
       apis.loginAPI.loginWithToken(appkey, userUuid);
     }
   }, [props.pluginStore, createListen, store, apis]);
