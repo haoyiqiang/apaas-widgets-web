@@ -92,6 +92,8 @@ export class FcrChatroomWidget extends FcrUISceneWidget {
   }
 
   onCreate(properties: any, userProperties: any) {
+    console.log("FcrChatroomWidget onCreate>>>")
+
     this._easemobUserId = userProperties?.userId;
     this._imConfig = properties?.extra;
     const appKey = this._imConfig?.orgName + '#' + this._imConfig?.appName;
