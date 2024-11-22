@@ -24,7 +24,7 @@ export class FcrChatRoomStore {
     const recvRoomIds = this._widget.recvChatRoomIds
     this.fcrChatRoom = AgoraIM.createIMwithType('easemob', {
       appKey,
-      mainRoomId: roomId,
+      roomId,
       sendRoomIds,
       recvRoomIds,
       userInfo: {

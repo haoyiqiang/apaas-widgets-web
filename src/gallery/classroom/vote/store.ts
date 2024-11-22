@@ -4,7 +4,7 @@ import { AgoraPolling } from '.';
 import { transI18n, bound } from 'agora-common-libs';
 import { AgoraExtensionRoomEvent, AgoraExtensionWidgetEvent } from '../../../events';
 import { OrientationEnum } from '../hx-chat/type';
-import { EduRoleTypeEnum } from 'agora-edu-core';
+import { EduRoleTypeEnum, EduRoomTypeEnum } from 'agora-edu-core';
 
 // 2 为老师或者助教出题阶段 只可老师或者助教可见
 // 1 为中间答题阶段，不同为老师或者助教和学生的权限问题
@@ -236,6 +236,12 @@ export class PluginStore {
   get isTeacher() {
     const { role } = this._widget.classroomConfig.sessionInfo;
     return role == EduRoleTypeEnum.teacher
+  }
+
+  @computed
+  get isBigClass() {
+    const { roomType } = this._widget.classroomConfig.sessionInfo;
+    return roomType == EduRoomTypeEnum.RoomBigClass    
   }
 
   @computed

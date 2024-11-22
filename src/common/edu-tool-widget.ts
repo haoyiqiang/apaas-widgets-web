@@ -1,11 +1,12 @@
 import { AgoraCloudClassWidget, AgoraWidgetTrackMode, bound } from 'agora-common-libs';
-import type {
-  AgoraWidgetController,
-  AgoraWidgetTrack,
-  Dimensions,
-  Point,
-  Track,
-  TrackOptions,
+import {
+  EduRoomTypeEnum,
+  type AgoraWidgetController,
+  type AgoraWidgetTrack,
+  type Dimensions,
+  type Point,
+  type Track,
+  type TrackOptions,
 } from 'agora-edu-core';
 import { AgoraExtensionWidgetEvent } from '../events';
 
@@ -94,8 +95,11 @@ export abstract class AgoraEduToolWidget extends AgoraCloudClassWidget {
   }
 
   get controlled() {
-    const { role } = this.classroomConfig.sessionInfo;
-    // return this.hasPrivilege;
-    return role == 1
+    const { role, roomType } = this.classroomConfig.sessionInfo;
+    if(roomType == EduRoomTypeEnum.RoomBigClass){
+      return role == 1
+    }else{
+      return this.hasPrivilege;
+    }
   }
 }
