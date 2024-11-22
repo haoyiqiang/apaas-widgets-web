@@ -6,8 +6,6 @@ import omit from 'lodash/omit';
 import uniqBy from 'lodash/uniqBy';
 
 import { CHAT_TABS_KEYS, MUTE_CONFIG, LOCAL_RETAIN_HISTORY_COUNT } from '../contants';
-
-
 let defaultState = {
   propsData: {}, // props 值
   showChat: false, // 控制Chat
@@ -25,9 +23,6 @@ let defaultState = {
     isUserMute: false, // 单人是否禁言
     memberCount:0,//成员数量
   },
-  memberCount: 0,
-  sendRoomIds: [],
-  recvRoomIds: [],
   messages: [], // 消息列表
   isTabKey: CHAT_TABS_KEYS.chat, // 当前选中的Tab
   showRed: false, // 不在聊天Tab消息提示
@@ -100,7 +95,6 @@ const reducer = (state = defaultState, action) => {
         ary = state.room.roomUsers.concat(data);
       }
       let newAry = uniq(ary);
-
       return {
         ...state,
         room: {
@@ -167,9 +161,7 @@ const reducer = (state = defaultState, action) => {
       };
     case 'SAVE_ROOM_MESSAGE':
       const { isHistory } = action.options;
-      const mainRoomId = state.room.info.id
-      const currUserId = state.propsData.userUuid
-      const recvRoomIds = state.propsData.recvRoomIds
+
       let dataArray = data;
 
       if (!isArray(data)) {
@@ -181,11 +173,11 @@ const reducer = (state = defaultState, action) => {
       msgs = state.messages.concat(dataArray);
 
       const msgIds = dataArray.filter((msg) => !!msg.ext.msgId).map((msg) => msg.ext.msgId);
-      // 只显示自己发送的和接受组的消息
-      msgs = msgs.filter((item) => ( item.from == currUserId || recvRoomIds.indexOf(item.to) !==-1) && !msgIds.includes(item.id));
+
+      msgs = msgs.filter((item) => !msgIds.includes(item.id));
 
       newMsgs = uniqBy(msgs, 'id');
-      newMsgs = newMsgs.slice(newMsgs.length - LOCAL_RETAIN_HISTORY_COUNT, newMsgs.length).sort((a, b) => Number(a.time) - Number(b.time));
+      newMsgs = newMsgs.slice(newMsgs.length - LOCAL_RETAIN_HISTORY_COUNT, newMsgs.length);
       return {
         ...state,
         messages: newMsgs,

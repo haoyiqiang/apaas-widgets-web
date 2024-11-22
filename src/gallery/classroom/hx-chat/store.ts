@@ -2,14 +2,14 @@ import { action, observable, runInAction, computed } from 'mobx';
 import { AgoraHXChatWidget } from '.';
 import { OrientationEnum } from './type';
 import { Lodash, bound } from 'agora-common-libs';
-import { EduClassroomConfig, FetchUserParam } from 'agora-edu-core';
+import type { FetchUserParam } from 'agora-edu-core';
 import { WebIM } from './legacy/utils/WebIM';
 import { AgoraChat } from 'agora-chat';
-import http from './legacy/api/base';
+
 export class WidgetChatUIStore {
   private _matchMedia = window.matchMedia('(orientation: portrait)');
   private _isFetchingList = false;
-  private _widget: AgoraHXChatWidget
+
   @observable
   orientation: OrientationEnum = OrientationEnum.portrait;
 
@@ -25,9 +25,8 @@ export class WidgetChatUIStore {
   @observable
   searchKeyword = '';
 
-  constructor(private widget: AgoraHXChatWidget) {
-    this._widget = widget
-    const { sessionInfo, platform } = widget.classroomConfig;
+  constructor(private _widget: AgoraHXChatWidget) {
+    const { sessionInfo, platform } = _widget.classroomConfig;
     const isH5 = platform === 'H5';
     this.handleOrientationchange();
 
@@ -144,7 +143,6 @@ export class WidgetChatUIStore {
     if (this._isFetchingList) {
       return;
     }
-    let totalCount = 0
 
     if (reset) {
       const list = [] as any[];
@@ -160,14 +158,12 @@ export class WidgetChatUIStore {
                 ...this.fetchUsersListParams,
                 // teacher
                 role: 1,
-                nextId: 1,
                 userName: this.searchKeyword,
               }
             : {
                 ...this.fetchUsersListParams,
                 // teacher
                 role: 1,
-                nextId: 1,
               },
         );
 
@@ -180,7 +176,6 @@ export class WidgetChatUIStore {
         const assistantList = await this.fetchNextListByParam({
           // assistant
           role: 3,
-          nextId: 1,
           ...override,
         });
 
@@ -193,8 +188,6 @@ export class WidgetChatUIStore {
         const studentList = await this.fetchNextListByParam({
           // student
           role: 2,
-          nextId: 1,
-          chatGroupUuids: this._widget.chatGroupUuids.toString(),
           ...override,
         });
 
@@ -220,7 +213,6 @@ export class WidgetChatUIStore {
         const studentList = await this.fetchNextListByParam({
           // student
           role: 2,
-          chatGroupUuids: this._widget.chatGroupUuids.toString(),
           ...override,
         });
 
@@ -246,33 +238,17 @@ export class WidgetChatUIStore {
       ...override,
     };
 
-    // const data: { nextId: string | number | undefined; list: any[] } =
-    //   await this._widget.classroomStore.userStore.fetchUserList({
-    //     ...params,
-    //     userName: this.searchKeyword,
-    //   });
-
-    const { host, appId, sessionInfo: { role, roomUuid  } } = this._widget.classroomConfig;
-    
-    const url = `${host}/edu/apps/${appId}/v2/rooms/${roomUuid}/users/page`
-    
-    const resp = await http.get(url, {
-      params: {
-        role: params.role,
-        type: params.type,
-        pageNo: params.nextId,
-        pageSize: params.count,
+    const data: { nextId: string | number | undefined; list: any[] } =
+      await this._widget.classroomStore.userStore.fetchUserList({
+        ...params,
         userName: this.searchKeyword,
-        chatGroupUuids: params.chatGroupUuids
-      }
-    })
-
-    const data:{total:number, pageNo:number, pageSize:number, list:any[]} = resp.data.data
+      });
 
     const list = await this.getUserInfoList(
       data.list.map((item) => item.userProperties.widgets.easemobIM.userId),
     );
-    return { total: data.total, nextId: data.pageNo + 1, list };
+
+    return { nextId: data.nextId, list };
   }
 
   /**

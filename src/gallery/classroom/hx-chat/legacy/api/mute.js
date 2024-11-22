@@ -2,50 +2,6 @@ import { WebIM } from '../utils/WebIM';
 import { roomAllMute, roomUserMute, isUserMute } from '../redux/actions/roomAction';
 import { SET_ALL_MUTE, REMOVE_ALL_MUTE, MUTE_USER, UNMUTE_USER, MUTE_CONFIG } from '../contants';
 import http from './base';
-import { EduRoleTypeEnum } from 'agora-edu-core';
-
-const batchMuteRoom = (roomIds, muted) => {
-  let tasks = []
-  for(let roomId of roomIds){
-    let task
-    if(muted){
-      task = WebIM.conn.disableSendChatRoomMsg({
-        chatRoomId: roomId
-      })
-    }else{
-      task = WebIM.conn.enableSendChatRoomMsg({
-        chatRoomId: roomId
-      })
-    }
-    
-    tasks.push(task)
-  }
-  return Promise.all(tasks)
-}
-
-const batchMuteUser = (userId, roomIds, muted) => {
-  let tasks = []
-  for(let roomId of roomIds){
-    let task
-    if(muted){
-      task = WebIM.conn.muteChatRoomMember({
-        chatRoomId: roomId, // 聊天室id
-        username: userId, // 成员id列表
-        muteDuration: -1,
-      })
-    }else{
-      
-      task = WebIM.conn.unmuteChatRoomMember({
-        chatRoomId: roomId, // 聊天室id
-        username: userId, // 成员id列表
-        muteDuration: -1,
-      })
-    }
-    
-    tasks.push(task)
-  }
-  return Promise.all(tasks)
-}
 
 export class MuteAPI {
   store = null;
@@ -114,14 +70,31 @@ export class MuteAPI {
 
   // 单人禁言
   setUserMute = (userId) => {
-    this.messageAPI.sendCmdMsg(MUTE_USER, userId);
-    this.store.dispatch(roomUserMute(userId, MUTE_CONFIG.mute));
+    const roomId = this.store.getState().propsData.chatRoomId;
+    let options = {
+      chatRoomId: roomId, // 聊天室id
+      username: userId, // 成员id列表
+      muteDuration: -1,
+    };
+    WebIM.conn.muteChatRoomMember(options).then((res) => {
+      console.log('setUserMute success>>>', res);
+      this.messageAPI.sendCmdMsg(MUTE_USER, res.data[0]?.user);
+      this.store.dispatch(roomUserMute(userId, MUTE_CONFIG.mute));
+    });
   };
 
   // 移除个人禁言
   removeUserMute = (userId) => {
-    this.messageAPI.sendCmdMsg(UNMUTE_USER, userId);
-    this.store.dispatch(roomUserMute(userId, MUTE_CONFIG.unMute));
+    const roomId = this.store.getState().propsData.chatRoomId;
+    let options = {
+      chatRoomId: roomId, // 群组id
+      username: userId, // 要移除的成员
+    };
+    WebIM.conn.unmuteChatRoomMember(options).then((res) => {
+      console.log('removeUserMute success>>>', res);
+      this.messageAPI.sendCmdMsg(UNMUTE_USER, res.data[0]?.user);
+      this.store.dispatch(roomUserMute(userId, MUTE_CONFIG.unMute));
+    });
   };
 
   // 获取禁言列表
@@ -142,32 +115,23 @@ export class MuteAPI {
   };
 
   // 一键禁言
-  setAllmute = async () => {
-    const { roleType, chatRoomId, userRoomIds=[] } = this.store.getState().propsData
-
-    // if(roleType == EduRoleTypeEnum.teacher){
-    //   // 老师禁言主房间
-    //   await batchMuteRoom([chatRoomId], true)
-    // }else{
-    //   // 助教禁言子房间
-    //   await batchMuteRoom(userRoomIds, true)
-    // }
-    this.messageAPI.sendCmdMsg(SET_ALL_MUTE);
-    this.store.dispatch(roomAllMute(true));
+  setAllmute = (roomId) => {
+    let options = {
+      chatRoomId: roomId, // 聊天室id
+    };
+    WebIM.conn.disableSendChatRoomMsg(options).then((res) => {
+      this.messageAPI.sendCmdMsg(SET_ALL_MUTE);
+      this.store.dispatch(roomAllMute(true));
+    });
   };
   // 解除一键禁言
-  removeAllmute = async () => {
-    const { roleType, chatRoomId, userRoomIds=[] } = this.store.getState().propsData
-
-    // if(roleType == EduRoleTypeEnum.teacher){
-    //   // 老师禁言主房间
-    //   await batchMuteRoom([chatRoomId], false)
-    // }else{
-    //   // 助教禁言子房间
-    //   await batchMuteRoom(userRoomIds, false)
-    // }
-    this.messageAPI.sendCmdMsg(REMOVE_ALL_MUTE);
-    this.store.dispatch(roomAllMute(false));
-  
+  removeAllmute = (roomId) => {
+    let options = {
+      chatRoomId: roomId, // 聊天室id
+    };
+    WebIM.conn.enableSendChatRoomMsg(options).then((res) => {
+      this.messageAPI.sendCmdMsg(REMOVE_ALL_MUTE);
+      this.store.dispatch(roomAllMute(false));
+    });
   };
 }

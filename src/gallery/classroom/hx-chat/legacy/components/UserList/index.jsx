@@ -5,8 +5,6 @@ import { useShallowEqualSelector } from '../../utils';
 import { Search } from '../../../../../../components/input-search-chat';
 import { SvgIconEnum, SvgImg } from '../../../../../../components/svg-img';
 import { InfiniteScrollRosterTable } from '../../../../../../components/table-chat-user';
-import { useMemo } from 'react';
-import { EduRoleTypeEnum } from 'agora-edu-core';
 
 // 成员页面
 // eslint-disable-next-line react/prop-types
@@ -18,38 +16,12 @@ export const UserList = ({
   fetchNextUsersList,
   onScroll,
 }) => {
-  const { apis, muteList, roleType, chatGroupUuids } = useShallowEqualSelector((state) => {
+  const { apis, muteList } = useShallowEqualSelector((state) => {
     return {
       apis: state.apis,
-      roleType: state.propsData.roleType,
-      chatGroupUuids: state.propsData.chatGroupUuids,
       muteList: state?.room.muteList,
     };
   });
-
-  const userList = useMemo(() => {
-    const isTeacher = roleType == EduRoleTypeEnum.teacher
-    const isMainAsistant =  chatGroupUuids.length == 0 && roleType == EduRoleTypeEnum.assistant
-    if(isTeacher || isMainAsistant){
-      // 老师和总助教相同：只显示主讲和总助教
-      return roomUserList.filter(user => {
-        const { role, chatGroupUuids: uuids = [] } = JSON.parse(user.ext)
-        return role == EduRoleTypeEnum.teacher || (role ==EduRoleTypeEnum.assistant && uuids.length == 0)
-      })
-    }else {
-      // 学生和子助教相同：一个房间内的人
-      return roomUserList.filter(user => {
-        const { role, chatGroupUuids: uuids = [] } = JSON.parse(user.ext)
-        for(let uuid of uuids){
-          if(chatGroupUuids.indexOf(uuid) !== -1){
-            // 一个房间
-            return true
-          }
-        }
-        return false
-      })
-    }
-  }, [roleType, roomUserList])
 
   return (
     <div className="fcr-hx-user" style={{ display: 'flex', flexDirection: 'column' }}>
@@ -66,7 +38,7 @@ export const UserList = ({
         />
       </div>
       <InfiniteScrollRosterTable
-        roomUserList={userList}
+        roomUserList={roomUserList}
         apis={apis}
         keyword={keyword}
         muteList={muteList}

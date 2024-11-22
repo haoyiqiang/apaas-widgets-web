@@ -20,7 +20,6 @@ import ReactDOM from 'react-dom';
 import { WidgetChatUIStore } from './store';
 import { FcrChatRoomApp } from './fcr-chatroom';
 import createStore from './legacy/redux/store';
-import { ROLE } from './legacy/contants';
 
 const App = observer(({ widget }: { widget: AgoraHXChatWidget }) => {
   const widgetStore = widget.widgetStore as WidgetChatUIStore;
@@ -123,7 +122,7 @@ const App = observer(({ widget }: { widget: AgoraHXChatWidget }) => {
 
   const hxStore = {
     globalContext,
-    context: { ...widget.imUIConfig, ...widget.imConfig, ...roomInfo, ...localUserInfo, chatGroupUuids: widget.chatGroupUuids, userRoomIds: widget.userChatRoomIds, recvRoomIds: widget.recvChatRoomIds, sendRoomIds: widget.sendChatRoomIds},
+    context: { ...widget.imUIConfig, ...widget.imConfig, ...roomInfo, ...localUserInfo },
   };
 
   const getAgoraChatToken = useCallback(async () => {
@@ -170,12 +169,8 @@ const App = observer(({ widget }: { widget: AgoraHXChatWidget }) => {
 });
 
 export class AgoraHXChatWidget extends AgoraCloudClassWidget {
-  private _imConfig?: { chatRoomId: string; appName: string; orgName: string , chatGroup?:{groups?:Record<string, string>} };
-  private _recvChatRoomIds: string[] = []// 接受组
-  private _sendChatRoomIds: string[] = []// 发送组
+  private _imConfig?: { chatRoomId: string; appName: string; orgName: string };
   private _easemobUserId?: string;
-  private _chatGroupUuids: string[] = []// 用户所在分组
-
   private _dom?: HTMLElement;
   private _widgetStore = new WidgetChatUIStore(this);
   private _rendered = false;
@@ -188,15 +183,6 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
   }
   get hasPrivilege() {
     return false;
-  }
-
-  get chatRoomId() {
-    return this._imConfig?.chatRoomId || ""
-  }
-
-
-  get chatGroupUuids() {
-    return this._chatGroupUuids
   }
 
   get imUIConfig() {
@@ -238,21 +224,6 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
     return this._imConfig;
   }
 
-  get userChatRoomIds() {
-    const groups = this._imConfig?.chatGroup?.groups || {}
-    return this._chatGroupUuids.map(uuid => {
-      return groups[uuid]
-    }).filter(item => item)
-  }
-
-  get recvChatRoomIds() {
-    return this._recvChatRoomIds
-  }
-
-  get sendChatRoomIds() {
-    return this._sendChatRoomIds
-  }
-
   get easemobUserId() {
     return this._easemobUserId;
   }
@@ -262,7 +233,6 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
   }
 
   onCreate(properties: any, userProperties: any) {
-    console.log("AgroupHXChatWidget onCreate>>>")
     this._easemobUserId = userProperties?.userId;
     this._imConfig = properties?.extra;
     this._renderApp();
@@ -274,15 +244,6 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
   }
 
   onUserPropertiesUpdate(userProperties: any) {
-    if(userProperties.chatGroupUuids){
-      this._chatGroupUuids = userProperties.chatGroupUuids
-    }
-    if(userProperties.sendChatRoomIds){
-      this._sendChatRoomIds = userProperties.sendChatRoomIds
-    }
-    if(userProperties.receiveChatRoomIds){
-      this._recvChatRoomIds = userProperties.receiveChatRoomIds
-    }
     this._easemobUserId = userProperties.userId;
     this._renderApp();
   }
@@ -343,8 +304,8 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
   }
 
   enableAutoFetch(enabled: boolean) {
-    // 只有子房间助教有成员列表，需要每隔10秒刷新一次
-    if (this.classroomConfig.sessionInfo.role === ROLE.assistant.id) {
+    // if the local user is teacher
+    if (this.classroomConfig.sessionInfo.role === 1) {
       if (enabled) {
         console.log('enableAutoFetch: true');
         //清除定时器

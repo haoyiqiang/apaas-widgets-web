@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState, Fragment, useMemo } from 'react';
+import { useState, Fragment } from 'react';
 import { useStore } from 'react-redux';
 import { Tabs } from 'antd';
 import { MessageBox } from '../MessageBox';
@@ -18,7 +18,6 @@ import notice from '../../themes/img/notice.png';
 // import assign from 'lodash/assign';
 import './index.css';
 import { useShallowEqualSelector } from '../../utils';
-import { EduRoleTypeEnum } from 'agora-edu-core';
 
 const { TabPane } = Tabs;
 
@@ -46,7 +45,6 @@ export const Chat = ({
     showMIniIcon,
     // memberCount,
     configUIVisible,
-    chatGroupUuids
   } = useShallowEqualSelector((state) => {
     return {
       // isLogin: _.get(state, 'isLogin'),
@@ -54,7 +52,6 @@ export const Chat = ({
       showRed: _.get(state, 'showRed'),
       showAnnouncementNotice: _.get(state, 'showAnnouncementNotice'),
       roleType: _.get(state, 'propsData.roleType', ''),
-      chatGroupUuids: _.get(state, "propsData.chatGroupUuids", []),
       // roomUsers: _.get(state, 'room.roomUsers', []),
       // memberCount: _.get(state, 'room.memberCount', 0),
       // roomUsersInfo: _.get(state, 'room.roomUsersInfo', {}),
@@ -66,9 +63,6 @@ export const Chat = ({
   // 直接在 propsData 中取值
   const isTeacher =
     roleType === ROLE.teacher.id || roleType === ROLE.assistant.id || roleType === ROLE.observer.id;
-
-  const isAssistant =  roleType === ROLE.assistant.id ;
-
   // useEffect(() => {
   //   // 加载成员信息
   //   let _speakerTeacher = [];
@@ -137,6 +131,7 @@ export const Chat = ({
       default:
         break;
     }
+
     if (key === 'USER') {
       fetchNextUsersList({}, true);
       startAutoFetch();
@@ -154,6 +149,7 @@ export const Chat = ({
   const onScroll = () => {
     stopAutoFetch();
   };
+
   return (
     <div>
       <Tabs onChange={onTabChange} activeKey={tabKey} className={'chat-widget'}>
@@ -178,8 +174,8 @@ export const Chat = ({
           {tabKey === CHAT_TABS_KEYS.chat && <MessageBox />}
           <InputBox />
         </TabPane>
-        {configUIVisible.memebers && (isAssistant || isTeacher) && (
-          <TabPane tab={<MemberCount roleType={roleType} roomUserList={userList}/>} key={CHAT_TABS_KEYS.user}>
+        {configUIVisible.memebers && isTeacher && (
+          <TabPane tab={<MemberCount />} key={CHAT_TABS_KEYS.user}>
             <UserList
               roomUserList={userList}
               keyword={searchKeyword}
@@ -189,7 +185,7 @@ export const Chat = ({
               onScroll={onScroll}></UserList>
           </TabPane>
         )}
-        {configUIVisible.announcement  && (
+        {configUIVisible.announcement && (
           <TabPane
             tab={
               <div>
@@ -217,35 +213,13 @@ export const Chat = ({
   );
 };
 
-const MemberCount = ({roleType, roomUserList}) => {
-  const { chatGroupUuids } = useShallowEqualSelector((state) => {
+const MemberCount = () => {
+  const { memberCount } = useShallowEqualSelector((state) => {
     return {
-      chatGroupUuids: state.propsData.chatGroupUuids,
+      memberCount: _.get(state, 'room.memberCount', 0),
     };
   });
-  const memberCount = useMemo(() => {
-    const isTeacher = roleType == EduRoleTypeEnum.teacher
-    const isMainAsistant =  chatGroupUuids.length == 0 && roleType == EduRoleTypeEnum.assistant
-    if(isTeacher || isMainAsistant){
-      return roomUserList.filter(user => {
-        // 主讲和总助教老师只显示学生数量
-        const {role} = JSON.parse(user.ext)
-        return role == EduRoleTypeEnum.student
-      }).length
-    }else{
-       // 学生和子助教: 一个房间的学生数量
-      return roomUserList.filter(user => {
-        const { role, chatGroupUuids: uuids = [] } = JSON.parse(user.ext)
-        for(let uuid of uuids){
-          if(role == EduRoleTypeEnum.student && chatGroupUuids.indexOf(uuid) !== -1){
-            // 一个房间
-            return true
-          }
-        }
-        return false
-      }).length
-    }
-  }, [roleType, roomUserList])
+
   const textContent =
     memberCount > 0
       ? `${transI18n('chat.members')}(${memberCount})`

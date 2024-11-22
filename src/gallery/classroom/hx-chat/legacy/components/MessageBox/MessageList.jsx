@@ -17,6 +17,7 @@ const getRowRenderer = (msgs) =>
     const isText = item?.contentsType === 'TEXT' || item?.type === 'txt';
     const isCmd = item?.contentsType === 'COMMAND' || item?.type === 'cmd';
     const isImg = item?.contentsType === 'IMAGE' || item?.type === 'img';
+
     return (
       <CellMeasurer
         cache={cache}

@@ -73,9 +73,7 @@ const App = function (props) {
 
   useEffect(() => {
     const propsData = { ...props.pluginStore.context };
-
     const { orgName, appName, chatRoomId, userUuid } = propsData;
-
 
     if (orgName && appName && chatRoomId && userUuid && !loggedIn.current && apis) {
       loggedIn.current = true;
@@ -85,7 +83,9 @@ const App = function (props) {
       store.dispatch(propsAction(propsData));
 
       initIMSDK(appkey);
+
       createListen(propsData, appkey);
+
       apis.loginAPI.loginWithToken(appkey, userUuid);
     }
   }, [props.pluginStore, createListen, store, apis]);

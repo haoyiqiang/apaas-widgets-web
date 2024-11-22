@@ -9,11 +9,9 @@ export class UserInfoAPI {
   }
 
   // 设置自己的用户属性
-  setUserInfo = (data) => {
-    const { roleType, imAvatarUrl, userName, chatGroupUuids } = data
-    const ext = JSON.stringify({
+  setUserInfo = ({ roleType, imAvatarUrl, userName }) => {
+    const userRoleType = JSON.stringify({
       role: roleType,
-      chatGroupUuids
     });
     const defaultAvatarUrl =
       'https://download-sdk.oss-cn-beijing.aliyuncs.com/downloads/IMDemo/avatar/Image1.png';
@@ -22,7 +20,7 @@ export class UserInfoAPI {
     let options = {
       nickname: userNickName,
       avatarurl: userAvatarUrl,
-      ext: ext,
+      ext: userRoleType,
     };
     WebIM.conn.updateOwnUserInfo(options).then((res) => {
       this.store.dispatch(userInfoAction(res.data));
@@ -32,10 +30,8 @@ export class UserInfoAPI {
   // 获取用户属性
   getUserInfo = async ({ member }) => {
     let count = 0;
-
     while (member.length > count) {
       let curmembers = member.slice(count, count + 100);
-
       await WebIM.conn.fetchUserInfoById(curmembers).then((res) => {
         this.store.dispatch(roomUsersInfo(res.data));
       });

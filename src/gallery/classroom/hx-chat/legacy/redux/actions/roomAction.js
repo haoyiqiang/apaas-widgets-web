@@ -2,7 +2,6 @@
 export const roomInfo = (data) => {
   return { type: 'ROOM_INFO', data };
 };
-
 // 聊天室成员
 export const roomUsers = (data, option) => {
   return { type: 'ROOM_USERS', data, option };
