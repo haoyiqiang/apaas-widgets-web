@@ -42,11 +42,13 @@ export class FcrChatRoom extends AgoraIMBase {
     ext: { roomUuid: string },
   ) {
     super();
+    console.log("FcrChatRoom>>>")
     this._connectionInfo = { appKey, roomId };
     this.init(appKey);
     this.userInfo = userInfo;
     this.ext = ext;
     this._enableLog();
+
   }
   get conn() {
     if (!this._conn) throw new Error();
@@ -480,6 +482,8 @@ export class FcrChatRoomGroup extends AgoraIMBase {
     userInfo: AgoraIMUserInfo<AgoraIMUserInfoExt>,
     ext: { roomUuid: string }) {
     super();
+    console.log("FcrChatRoomGroup>>>")
+
     this._connectionInfo = { appKey, roomId: mainRoomId, sendRoomIds, recvRoomIds };
     this.init(appKey);
     this.userInfo = userInfo;
