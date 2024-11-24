@@ -659,6 +659,37 @@ export class FcrChatRoomGroup extends AgoraIMBase {
       }
       msgList.push(convertHXMessage(msg));
     });
+    const message = messages.sort((a, b) => {
+        //@ts-ignore
+      return Number(a.time) - Number(b.time)
+    }).findLast(msg => {
+        //@ts-ignore
+      return msg.action == "setAllMute" || msg.action == "removeAllMute"  || msg.action == "mute" || msg.action == "unmute"
+    })
+    const currentLoginUser = this.userInfo.userId
+    if(message){
+        //@ts-ignore
+      switch (message.action) {
+        case "setAllMute":
+            this.emit(AgoraIMEvents.AllUserMuted);
+            break;
+          case "removeAllMute":
+            this.emit(AgoraIMEvents.AllUserUnmuted);
+            break;
+          case "mute":
+            //@ts-ignore
+            if (currentLoginUser === message.ext?.muteMember) {
+              this.emit(AgoraIMEvents.UserMuted);
+            }
+            break
+          case "unmute":
+            //@ts-ignore
+            if (currentLoginUser === message.ext?.muteMember) {
+              this.emit(AgoraIMEvents.UserUnmuted);
+            }
+            break
+      }
+    }
     return msgList.reverse();
   }
 
