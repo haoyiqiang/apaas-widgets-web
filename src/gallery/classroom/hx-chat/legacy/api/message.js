@@ -20,7 +20,7 @@ export class MessageAPI {
     var id = WebIM.conn.getUniqueId(); //生成本地消息id
     var msg = new WebIM.message('cmd', id); //创建命令消息
 
-    muteNickName = ""
+    var muteNickName = ""
     if(userId && state.room.roomUsersInfo[userId]){
       muteNickName = state.room.roomUsersInfo[userId].nickname
     }

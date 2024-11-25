@@ -85,6 +85,10 @@ export class MessageAPI {
     // 主讲和总助教的禁言影响所有房间，除此之外只影响自己房间
     const isTeacher = roleType == ROLE.teacher.id
     const isMainAsistant = roleType == ROLE.assistant.id && chatGroupUuids.length == 0
+    var muteNickName = ""
+    if(userId && state.room.roomUsersInfo[userId]){
+      muteNickName = state.room.roomUsersInfo[userId].nickname
+    }
     let options = {
       action: action, //用户自定义，cmd消息必填
       chatType: 'chatRoom',
@@ -94,7 +98,7 @@ export class MessageAPI {
         roomUuid: roomUuid,
         role: roleType,
         muteMember: userId || '',
-        muteNickName: (userId && state.room.roomUsersInfo[userId].nickname) || '',
+        muteNickName: muteNickName,
         nickName: loginName,
       }, //用户自扩展的消息内容（群聊用法相同）
       success: (id, serverId) => {
