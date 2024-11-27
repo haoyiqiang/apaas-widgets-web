@@ -227,18 +227,13 @@ const MemberCount = ({roleType, roomUserList}) => {
     const isTeacher = roleType == EduRoleTypeEnum.teacher
     const isMainAsistant =  chatGroupUuids.length == 0 && roleType == EduRoleTypeEnum.assistant
     if(isTeacher || isMainAsistant){
-      return roomUserList.filter(user => {
-        // 主讲和总助教老师只显示学生数量
-        const {role} = JSON.parse(user.ext)
-        return role == EduRoleTypeEnum.student
-      }).length
+      return roomUserList.length
     }else{
-       // 学生和子助教: 一个房间的学生数量
+       // 学生和子助教: 一个房间的用户数量
       return roomUserList.filter(user => {
-        const { role, chatGroupUuids: uuids = [] } = JSON.parse(user.ext)
+        const { chatGroupUuids: uuids = [] } = JSON.parse(user.ext)
         for(let uuid of uuids){
-          if(role == EduRoleTypeEnum.student && chatGroupUuids.indexOf(uuid) !== -1){
-            // 一个房间
+          if(chatGroupUuids.indexOf(uuid) !== -1){
             return true
           }
         }
