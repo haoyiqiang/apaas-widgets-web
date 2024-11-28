@@ -514,21 +514,26 @@ export class FcrBoardMainWindow implements FcrBoardMainWindowEventEmitter {
     const whiteRoom = this._whiteRoom;
 
     if (whiteRoom) {
-      const sceneMap = whiteRoom.entireScenes();
+ 
 
+      const sceneMap = whiteRoom.entireScenes();
       const scenes = Object.keys(sceneMap);
       if (scenes.length) {
-        const _room = Object.create(whiteRoom);
-        _room.state.cameraState = { width: 2038, height: 940 }; // 创建一个宽高
+        let view = this._windowManager?.mainView!;
 
         const cps = sceneMap['/'].map((scene) => {
-          return () =>
-            snapshot(_room, {
-              scenePath: '/' + scene.name,
-              crossorigin: true,
-              background,
-              src2dataurl: src2DataURL,
-            });
+          return () => {
+            let canvas = document.createElement("canvas");
+            let context = canvas.getContext("2d")!;
+            canvas.width = 2038;
+            canvas.height = 940;
+            context.fillStyle = '#FFFFFF'
+            context.fillRect(0, 0, canvas.width, canvas.height)
+            //@ts-ignore
+            return window._appliancePlugin.screenshotToCanvasAsync(context,  '/' + scene.name, canvas.width, canvas.height, {...view.camera}).then(() => {
+              return canvas
+            })
+          }
         });
 
         progressCallback(1);

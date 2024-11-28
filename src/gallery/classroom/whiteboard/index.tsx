@@ -363,7 +363,6 @@ export class FcrBoardWidget extends AgoraCloudClassWidget {
   @bound
   private async _getSnapshotImage(background: string) {
     const mainWindow = this._boardMainWindow;
-
     if (mainWindow) {
       mainWindow.getSnapshotImage(background, (progress) => {
         if (progress !== 100) {
