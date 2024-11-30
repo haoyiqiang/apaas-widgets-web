@@ -11,7 +11,7 @@ import {
   dispatchShowMiniIcon,
   dispatchMemberCountChange,
 } from './legacy';
-import type { AgoraWidgetController, FetchUserParam } from 'agora-edu-core';
+import { EduRoleTypeEnum, type AgoraWidgetController, type FetchUserParam } from 'agora-edu-core';
 import classNames from 'classnames';
 import { autorun, IReactionDisposer, reaction } from 'mobx';
 import { observer } from 'mobx-react';
@@ -82,6 +82,8 @@ const App = observer(({ widget }: { widget: AgoraHXChatWidget }) => {
     }
   }, [isFullScreen]);
 
+  const value = widget.classroomStore.userStore.users
+  
   useEffect(() => {
     widgetStore.addOrientationchange();
     widgetStore.handleOrientationchange();
@@ -100,14 +102,6 @@ const App = observer(({ widget }: { widget: AgoraHXChatWidget }) => {
         (value) => {
           dispatchShowChat(value);
           dispatchShowMiniIcon(!value);
-        },
-      ),
-    );
-    disposers.push(
-      reaction(
-        () => widget.classroomStore.userStore.userCount,
-        (value) => {
-          dispatchMemberCountChange(value);
         },
       ),
     );
@@ -284,6 +278,8 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
     if(userProperties.receiveChatRoomIds){
       this._recvChatRoomIds = userProperties.receiveChatRoomIds
     }
+    this.enableAutoFetch(true)
+    this.widgetStore.fetchNextUsersList({}, true);
     this._easemobUserId = userProperties.userId;
     this._renderApp();
   }
@@ -344,8 +340,8 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
   }
 
   enableAutoFetch(enabled: boolean) {
-    // 只有子房间助教有成员列表，需要每隔10秒刷新一次
-    if (this.classroomConfig.sessionInfo.role === ROLE.assistant.id) {
+    const role = this.classroomConfig.sessionInfo.role
+    if (role === ROLE.assistant.id || role === ROLE.teacher.id) {
       if (enabled) {
         console.log('enableAutoFetch: true');
         //清除定时器
