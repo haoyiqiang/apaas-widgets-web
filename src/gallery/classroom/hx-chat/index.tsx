@@ -102,6 +102,7 @@ const App = observer(({ widget }: { widget: AgoraHXChatWidget }) => {
         },
       ),
     );
+    
     disposers.push(
       reaction(
         () => widget.classroomStore.userStore.userCount,

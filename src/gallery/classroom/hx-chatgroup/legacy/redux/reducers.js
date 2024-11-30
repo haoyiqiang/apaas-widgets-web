@@ -100,7 +100,6 @@ const reducer = (state = defaultState, action) => {
         ary = state.room.roomUsers.concat(data);
       }
       let newAry = uniq(ary);
-
       return {
         ...state,
         room: {
@@ -130,7 +129,6 @@ const reducer = (state = defaultState, action) => {
           userInfo = omit(userInfo, user);
         }
       });
-
       return {
         ...state,
         room: {

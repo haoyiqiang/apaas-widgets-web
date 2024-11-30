@@ -179,7 +179,7 @@ export const Chat = ({
           <InputBox />
         </TabPane>
         {configUIVisible.memebers && (isAssistant || isTeacher) && (
-          <TabPane tab={<MemberCount roleType={roleType} roomUserList={userList}/>} key={CHAT_TABS_KEYS.user}>
+          <TabPane tab={<MemberCount />} key={CHAT_TABS_KEYS.user}>
             <UserList
               roomUserList={userList}
               keyword={searchKeyword}
@@ -217,30 +217,48 @@ export const Chat = ({
   );
 };
 
-const MemberCount = ({roleType, roomUserList}) => {
-  const { chatGroupUuids } = useShallowEqualSelector((state) => {
+const MemberCount = () => {
+  const { roleType, roomUsers, roomUsersInfo, chatGroupUuids } = useShallowEqualSelector((state) => {
     return {
+      roleType: state.propsData.roleType,
+      roomUsers: state.room.roomUsers,
+      roomUsersInfo: state.room.roomUsersInfo,
       chatGroupUuids: state.propsData.chatGroupUuids,
     };
   });
   const memberCount = useMemo(() => {
+    const users = roomUsers.map(id => {
+      return roomUsersInfo[id]
+    }).filter(user => {
+      return user && user.ext && user.ext.length
+    }).map(user => {
+      return {
+        ...user,
+        ext: JSON.parse(user.ext)
+      }
+    })
     const isTeacher = roleType == EduRoleTypeEnum.teacher
     const isMainAsistant =  chatGroupUuids.length == 0 && roleType == EduRoleTypeEnum.assistant
     if(isTeacher || isMainAsistant){
-      return roomUserList.length
+      return users.filter(user => {
+        const { role } = user.ext
+        return role == EduRoleTypeEnum.teacher || role == EduRoleTypeEnum.student || role == EduRoleTypeEnum.assistant
+      }).length
     }else{
        // 学生和子助教: 一个房间的用户数量
-      return roomUserList.filter(user => {
-        const { chatGroupUuids: uuids = [] } = JSON.parse(user.ext)
-        for(let uuid of uuids){
-          if(chatGroupUuids.indexOf(uuid) !== -1){
-            return true
+      return users.filter(user => {
+        const { role, chatGroupUuids: uuids = [] } = user.ext
+        if(role == EduRoleTypeEnum.teacher || role == EduRoleTypeEnum.student || role == EduRoleTypeEnum.assistant){
+          for(let uuid of uuids){
+            if(chatGroupUuids.indexOf(uuid) !== -1){
+              return true
+            }
           }
         }
         return false
       }).length
     }
-  }, [roleType, roomUserList])
+  }, [roleType, roomUsers, roomUsersInfo])
   const textContent =
     memberCount > 0
       ? `${transI18n('chat.members')}(${memberCount})`

@@ -278,8 +278,8 @@ export class AgoraHXChatWidget extends AgoraCloudClassWidget {
     if(userProperties.receiveChatRoomIds){
       this._recvChatRoomIds = userProperties.receiveChatRoomIds
     }
-    this.enableAutoFetch(true)
-    this.widgetStore.fetchNextUsersList({}, true);
+    // this.enableAutoFetch(true)
+    // this.widgetStore.fetchNextUsersList({}, true);
     this._easemobUserId = userProperties.userId;
     this._renderApp();
   }
